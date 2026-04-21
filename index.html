@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>FasoPermut – Permutations des Enseignants BF</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --vert:#1a7a4a;--vert2:#22a05e;--vert3:#e6f5ee;
@@ -1128,6 +1129,154 @@ footer b{color:#4fc878}
 </div>
 
 <script>
+// ===== SUPABASE CONFIG =====
+var SUPABASE_URL = 'https://vbruosulizonagtzkrip.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_RQc9-Hict_-GM1SRV9hDAg_LOdhCEjk';
+var supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+// ===== SUPABASE HELPERS =====
+async function sbGetUser(tel) {
+  if (!supabase) return null;
+  try {
+    var { data, error } = await supabase.from('users').select('*').eq('tel', tel).single();
+    if (error) return null;
+    return data;
+  } catch(e) { return null; }
+}
+
+async function sbCreateUser(userData) {
+  if (!supabase) return false;
+  try {
+    var { error } = await supabase.from('users').insert([userData]);
+    return !error;
+  } catch(e) { return false; }
+}
+
+async function sbUpdateUser(tel, updates) {
+  if (!supabase) return false;
+  try {
+    var { error } = await supabase.from('users').update(updates).eq('tel', tel);
+    return !error;
+  } catch(e) { return false; }
+}
+
+async function sbDeleteUser(tel) {
+  if (!supabase) return false;
+  try {
+    await supabase.from('annonces').delete().eq('tel', tel);
+    var { error } = await supabase.from('users').delete().eq('tel', tel);
+    return !error;
+  } catch(e) { return false; }
+}
+
+async function sbGetAnnonces(filters) {
+  if (!supabase) return [];
+  try {
+    var query = supabase.from('annonces').select('*').order('created_at', { ascending: false });
+    if (filters) {
+      if (filters.grade) query = query.eq('grade', filters.grade);
+      if (filters.disc)  query = query.eq('disc', filters.disc);
+      if (filters.reg)   query = query.eq('reg', filters.reg);
+      if (filters.prov)  query = query.eq('prov', filters.prov);
+    }
+    var { data, error } = await query;
+    if (error) return [];
+    return data || [];
+  } catch(e) { return []; }
+}
+
+async function sbInsertAnnonce(ann) {
+  if (!supabase) return null;
+  try {
+    var { data, error } = await supabase.from('annonces').insert([ann]).select().single();
+    if (error) { console.error('sbInsertAnnonce', error); return null; }
+    return data;
+  } catch(e) { return null; }
+}
+
+async function sbDeleteAnnonce(id) {
+  if (!supabase) return false;
+  try {
+    var { error } = await supabase.from('annonces').delete().eq('id', id);
+    return !error;
+  } catch(e) { return false; }
+}
+
+async function sbCountAnnonces(tel) {
+  if (!supabase) return 0;
+  try {
+    var { count, error } = await supabase.from('annonces').select('*', { count: 'exact', head: true }).eq('tel', tel);
+    if (error) return 0;
+    return count || 0;
+  } catch(e) { return 0; }
+}
+
+async function sbGetMesAnnonces(tel) {
+  if (!supabase) return [];
+  try {
+    var { data, error } = await supabase.from('annonces').select('*').eq('tel', tel).order('created_at', { ascending: false });
+    if (error) return [];
+    return data || [];
+  } catch(e) { return []; }
+}
+
+async function sbGetAdminStats() {
+  if (!supabase) return { users: 0, annonces: 0, regions: 0 };
+  try {
+    var { count: uCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
+    var { count: aCount } = await supabase.from('annonces').select('*', { count: 'exact', head: true });
+    var { data: regData } = await supabase.from('annonces').select('reg');
+    var regions = regData ? new Set(regData.map(function(r){ return r.reg; })).size : 0;
+    return { users: uCount || 0, annonces: aCount || 0, regions: regions };
+  } catch(e) { return { users: 0, annonces: 0, regions: 0 }; }
+}
+
+async function sbGetAdminUsers() {
+  if (!supabase) return [];
+  try {
+    var { data, error } = await supabase.from('users').select('nom,tel').order('created_at', { ascending: false });
+    if (error) return [];
+    return data || [];
+  } catch(e) { return []; }
+}
+
+async function sbGetAdminAnnonces() {
+  if (!supabase) return [];
+  try {
+    var { data, error } = await supabase.from('annonces').select('*').order('created_at', { ascending: false });
+    if (error) return [];
+    return data || [];
+  } catch(e) { return []; }
+}
+
+// Réponse Supabase temps réel : écoute les nouvelles annonces
+function setupRealtimeAnnonces() {
+  if (!supabase) return;
+  supabase
+    .channel('annonces-live')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'annonces' }, function(payload) {
+      var a = payload.new;
+      if (a && !(currentUserData && a.tel === currentUserData.tel)) {
+        addAnnToS3(a);
+        runMatchingEngine();
+        var badge = document.getElementById('notif-badge');
+        if (badge) {
+          var n = parseInt(badge.textContent || '0') + 1;
+          badge.textContent = n;
+          badge.style.display = 'flex';
+        }
+      }
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'annonces' }, function(payload) {
+      var id = payload.old && payload.old.id;
+      if (id) {
+        var card = document.querySelector('.ann-card[data-id="'+id+'"]');
+        if (card) { card.remove(); filterAnn(); }
+      }
+    })
+    .subscribe();
+}
+
 // ===== DONNÉES GÉOGRAPHIQUES =====
 var REGIONS_PROVINCES = {
   "Bankui":     ["Balé","Banwa","Mouhoun","Sourou"],
@@ -1147,43 +1296,27 @@ var REGIONS_PROVINCES = {
   "Tapoa":      ["Tapoa"]
 };
 
-// ===== COMPTEUR ANNONCES AUTO-INCRÉMENTÉ =====
-(function() {
-  var BASE = 1240;
-  var STEP = 20;
-  var INTERVAL_MS = 3 * 60 * 60 * 1000; // 3 heures
-  var key = 'fp_ann_count';
-  var keyTs = 'fp_ann_count_ts';
+// ===== COMPTEUR ANNONCES DEPUIS SUPABASE =====
+async function updateStatAnnonces() {
   try {
-    var saved = parseInt(localStorage.getItem(key)) || BASE;
-    var lastTs = parseInt(localStorage.getItem(keyTs)) || Date.now();
-    var now = Date.now();
-    var elapsed = now - lastTs;
-    var steps = Math.floor(elapsed / INTERVAL_MS);
-    if (steps > 0) {
-      saved += steps * STEP;
-      localStorage.setItem(key, saved);
-      localStorage.setItem(keyTs, lastTs + steps * INTERVAL_MS);
-    }
+    if (!supabase) return;
+    var { count } = await supabase.from('annonces').select('*', { count: 'exact', head: true });
     var el = document.getElementById('stat-annonces');
-    if (el) el.textContent = '+' + saved;
+    if (el && count !== null) el.textContent = '+' + (count + 1240);
   } catch(e) {}
-})();
+}
+updateStatAnnonces();
 
 
-function getUsers() {
-  try { return JSON.parse(localStorage.getItem('fp_users')||'{}'); } catch(e){return{};}
-}
-function saveUsers(u) {
-  try { localStorage.setItem('fp_users', JSON.stringify(u)); } catch(e){}
-}
+// Les données users sont maintenant dans Supabase
+// On garde juste la session locale dans sessionStorage (pas sensible)
 function getCurrentUser() {
-  try { return JSON.parse(localStorage.getItem('fp_current')||'null'); } catch(e){return null;}
+  try { return JSON.parse(sessionStorage.getItem('fp_current')||'null'); } catch(e){return null;}
 }
 function saveCurrentUser(u) {
   try {
-    if(u) localStorage.setItem('fp_current', JSON.stringify(u));
-    else localStorage.removeItem('fp_current');
+    if(u) sessionStorage.setItem('fp_current', JSON.stringify(u));
+    else sessionStorage.removeItem('fp_current');
   } catch(e){}
 }
 
@@ -1403,17 +1536,32 @@ function filterAnn() {
   document.getElementById('ann-count').textContent = visible + ' annonce(s) trouvée(s) :';
 }
 
-// ===== ACTUALISER LES ANNONCES =====
-function refreshAnnonces() {
+async function refreshAnnonces() {
   var btn = document.getElementById('btn-refresh');
   btn.classList.add('spinning');
   btn.disabled = true;
-  setTimeout(function(){
-    btn.classList.remove('spinning');
-    btn.disabled = false;
+
+  try {
+    var annonces = await sbGetAnnonces();
+    var container = document.getElementById('dynamic-ann-list');
+    if (container) {
+      container.innerHTML = '';
+      annonces.forEach(function(a) {
+        a.regsDest  = a.regs_dest  || [];
+        a.provsDest = a.provs_dest || [];
+        a.ts = a.created_at ? new Date(a.created_at).getTime() : Date.now();
+        addAnnToS3(a);
+      });
+    }
     filterAnn();
-    showToast('✅ Annonces actualisées !');
-  }, 900);
+    runMatchingEngine();
+    showToast('✅ Annonces actualisées ! (' + annonces.length + ' annonces)');
+  } catch(e) {
+    showToast('❌ Erreur de chargement. Vérifiez votre connexion.');
+  }
+
+  btn.classList.remove('spinning');
+  btn.disabled = false;
 }
 
 // ===== PARTAGER LE SITE =====
@@ -1446,7 +1594,7 @@ function fallbackCopy(text) {
 var mesAnnonces = [];
 var MAX_ANNONCES = 3;
 
-function publierAnnonce() {
+async function publierAnnonce() {
   if(!isLoggedIn) {
     go('s-co');
     nav(document.querySelectorAll('.bni')[0]);
@@ -1459,8 +1607,9 @@ function publierAnnonce() {
     return;
   }
 
-  // Vérifier quota max 3
-  if(mesAnnonces.length >= MAX_ANNONCES) {
+  // Vérifier quota max 3 via Supabase
+  var nbExistant = await sbCountAnnonces(currentUserData.tel);
+  if(nbExistant >= MAX_ANNONCES) {
     showToast('⚠️ Maximum ' + MAX_ANNONCES + ' annonces atteint. Supprimez une annonce pour en publier une nouvelle.');
     return;
   }
@@ -1478,61 +1627,71 @@ function publierAnnonce() {
     return;
   }
 
-  // Régions et provinces destination
-  var regDestSel = document.getElementById('reg-dest-select'); var regsDestChecked = regDestSel ? Array.from(regDestSel.selectedOptions).map(function(o){return o.value;}) : [];
+  var regDestSel = document.getElementById('reg-dest-select');
+  var regsDestChecked = regDestSel ? Array.from(regDestSel.selectedOptions).map(function(o){return o.value;}) : [];
   var provsDestChecked = Array.from(document.querySelectorAll('input[name="prov-dest-list"]:checked')).map(function(b){return b.value;});
 
   var btn = document.getElementById('btn-publier');
   btn.disabled = true;
+  btn.innerHTML = '⏳ Publication...';
 
-  (function() {
-    var ann = {
-      nom: nom, tel: tel, grade: grade, disc: disc,
-      reg: reg, prov: prov, etab: etab,
-      regsDest: regsDestChecked,
-      provsDest: provsDestChecked,
-      commune: (document.getElementById('f-commune')||{value:''}).value.trim(),
-      tel2: (document.getElementById('f-tel2')||{value:''}).value.trim(),
-      id: Date.now(),
-      ts: Date.now()
-    };
-    // Anti-doublon : vérifier si annonce identique déjà publiée
-    var isDuplicate = mesAnnonces.some(function(existing) {
-      return existing.grade === ann.grade && existing.disc === ann.disc && existing.reg === ann.reg && existing.prov === ann.prov;
-    });
-    if (isDuplicate) {
-      btn.disabled = false;
-      btn.classList.remove('loading');
-      btn.innerHTML = '✅ PUBLIER MON ANNONCE — GRATUIT';
-      showToast('⚠️ Vous avez déjà publié une annonce identique (même grade, discipline et poste).');
-      return;
-    }
-    mesAnnonces.push(ann);
-    renderMesAnnonces();
-    addAnnToS3(ann);
-    setTimeout(runSmartNotifications, 200);
+  var ann = {
+    nom: nom, tel: tel, grade: grade, disc: disc,
+    reg: reg, prov: prov, etab: etab,
+    regs_dest: regsDestChecked,
+    provs_dest: provsDestChecked,
+    commune: (document.getElementById('f-commune')||{value:''}).value.trim(),
+    tel2: (document.getElementById('f-tel2')||{value:''}).value.trim()
+  };
 
+  // Anti-doublon
+  var isDuplicate = mesAnnonces.some(function(existing) {
+    return existing.grade === ann.grade && existing.disc === ann.disc && existing.reg === ann.reg && existing.prov === ann.prov;
+  });
+  if (isDuplicate) {
     btn.disabled = false;
-    btn.classList.remove('loading');
     btn.innerHTML = '✅ PUBLIER MON ANNONCE — GRATUIT';
-    // Afficher popup félicitations avec lien Facebook
-    var felicDiv = document.createElement('div');
-    felicDiv.id = 'felic-overlay';
-    felicDiv.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:flex;align-items:center;justify-content:center;animation:fadeInUp .3s ease';
-    felicDiv.innerHTML = '<div style="background:#fff;border-radius:18px;padding:28px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">'
-      + '<div style="font-size:48px;margin-bottom:10px">🎉</div>'
-      + '<div style="font-size:20px;font-weight:800;color:var(--vert);margin-bottom:8px">Félicitations !</div>'
-      + '<div style="font-size:13px;color:var(--txt2);margin-bottom:18px">Votre annonce a été publiée ! Partagez-la pour maximiser vos chances de permuter !</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
-      + '<button onclick="shareToWhatsApp(\''+escH(nom)+'\',\''+escH(grade)+'\',\''+escH(disc)+'\',\''+escH(reg)+'\',\''+escH(prov)+'\')" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:9px;padding:11px;font-size:12px;font-weight:700;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>WhatsApp</button>'
-      + '<button onclick="shareToFacebook(\''+escH(nom)+'\',\''+escH(grade)+'\',\''+escH(disc)+'\',\''+escH(reg)+'\',\''+escH(prov)+'\')" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#1877f2;color:#fff;border:none;border-radius:9px;padding:11px;font-size:12px;font-weight:700;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>Facebook</button>'
-      + '</div>'
-      + '<a href="https://www.facebook.com/share/18MkcYr54Y/" target="_blank" onclick="document.getElementById(\'felic-overlay\').remove()" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#1877f2;color:#fff;padding:11px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>Rejoindre notre page Facebook</a>'
-      + '<button onclick="document.getElementById(\'felic-overlay\').remove()" style="background:none;border:1.5px solid var(--gris2);border-radius:10px;padding:10px;width:100%;font-size:13px;color:var(--txt2);cursor:pointer">Plus tard</button>'
-      + '</div>';
-    document.body.appendChild(felicDiv);
-    felicDiv.addEventListener('click', function(e){ if(e.target===felicDiv) felicDiv.remove(); });
-  })();
+    showToast('⚠️ Vous avez déjà publié une annonce identique.');
+    return;
+  }
+
+  // Insérer dans Supabase
+  var inserted = await sbInsertAnnonce(ann);
+  btn.disabled = false;
+  btn.innerHTML = '✅ PUBLIER MON ANNONCE — GRATUIT';
+
+  if (!inserted) {
+    showToast('❌ Erreur lors de la publication. Réessayez.');
+    return;
+  }
+
+  // Normaliser pour usage local
+  inserted.regsDest = inserted.regs_dest || [];
+  inserted.provsDest = inserted.provs_dest || [];
+  inserted.ts = new Date(inserted.created_at).getTime() || Date.now();
+
+  mesAnnonces.push(inserted);
+  renderMesAnnonces();
+  addAnnToS3(inserted);
+  setTimeout(runSmartNotifications, 200);
+
+  // Popup félicitations
+  var felicDiv = document.createElement('div');
+  felicDiv.id = 'felic-overlay';
+  felicDiv.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:flex;align-items:center;justify-content:center;animation:fadeInUp .3s ease';
+  felicDiv.innerHTML = '<div style="background:#fff;border-radius:18px;padding:28px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">'
+    + '<div style="font-size:48px;margin-bottom:10px">🎉</div>'
+    + '<div style="font-size:20px;font-weight:800;color:var(--vert);margin-bottom:8px">Félicitations !</div>'
+    + '<div style="font-size:13px;color:var(--txt2);margin-bottom:18px">Votre annonce a été publiée et est visible par tous les enseignants ! Partagez-la pour maximiser vos chances !</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
+    + '<button onclick="shareToWhatsApp(\''+escH(nom)+'\',\''+escH(grade)+'\',\''+escH(disc)+'\',\''+escH(reg)+'\',\''+escH(prov)+'\')" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:9px;padding:11px;font-size:12px;font-weight:700;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>WhatsApp</button>'
+    + '<button onclick="shareToFacebook(\''+escH(nom)+'\',\''+escH(grade)+'\',\''+escH(disc)+'\',\''+escH(reg)+'\',\''+escH(prov)+'\')" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#1877f2;color:#fff;border:none;border-radius:9px;padding:11px;font-size:12px;font-weight:700;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>Facebook</button>'
+    + '</div>'
+    + '<a href="https://www.facebook.com/share/18MkcYr54Y/" target="_blank" onclick="document.getElementById(\'felic-overlay\').remove()" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#1877f2;color:#fff;padding:11px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>Rejoindre notre page Facebook</a>'
+    + '<button onclick="document.getElementById(\'felic-overlay\').remove()" style="background:none;border:1.5px solid var(--gris2);border-radius:10px;padding:10px;width:100%;font-size:13px;color:var(--txt2);cursor:pointer">Plus tard</button>'
+    + '</div>';
+  document.body.appendChild(felicDiv);
+  felicDiv.addEventListener('click', function(e){ if(e.target===felicDiv) felicDiv.remove(); });
 }
 
 function renderMesAnnoncesCompte() {
@@ -1586,6 +1745,7 @@ function addAnnToS3(a) {
   if(!destStr) destStr = 'Flexible';
 
   var html = '<div class="ann-card" '
+    + 'data-id="'+escH(String(a.id))+'" '
     + 'data-disc="'+escH(a.disc)+'" '
     + 'data-grade="'+escH(gradeShort)+'" '
     + 'data-reg="'+escH(a.reg)+'" '
@@ -1632,10 +1792,18 @@ function escH(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function supprimerAnn(id) {
-  mesAnnonces = mesAnnonces.filter(function(a){ return a.id !== id; });
-  renderMesAnnonces();
-  showToast('Annonce supprimée.');
+async function supprimerAnn(id) {
+  if (!confirm('Supprimer cette annonce ?')) return;
+  var ok = await sbDeleteAnnonce(id);
+  if (ok) {
+    mesAnnonces = mesAnnonces.filter(function(a){ return a.id !== id; });
+    renderMesAnnonces();
+    var card = document.querySelector('.ann-card[data-id="'+id+'"]');
+    if (card) { card.remove(); filterAnn(); }
+    showToast('✅ Annonce supprimée.');
+  } else {
+    showToast('❌ Erreur lors de la suppression.');
+  }
 }
 
 function updateDebloquerButtons() {
@@ -1711,17 +1879,15 @@ var forgotBlocked = false;
 var forgotBlockTimer = null;
 
 
-function forgotAutoFill(tel) {
-  var users = getUsers();
-  var user = users[tel.trim()];
+async function forgotAutoFill(tel) {
   var info = document.getElementById('forgot-user-info');
-  if (info) {
-    if (user && user.nom) {
-      info.textContent = 'Compte : ' + user.nom;
-      info.style.display = 'block';
-    } else {
-      info.style.display = 'none';
-    }
+  if (!info) return;
+  var user = await sbGetUser(tel.trim());
+  if (user && user.nom) {
+    info.textContent = 'Compte : ' + user.nom;
+    info.style.display = 'block';
+  } else {
+    info.style.display = 'none';
   }
 }
 
@@ -1732,19 +1898,10 @@ function showForgotPwd() {
   forgotBlocked = false;
   document.getElementById('forgot-attempts').style.display = 'none';
   document.getElementById('new-pwd-block').style.display = 'none';
-  // Auto-remplir le tel depuis le champ connexion si renseigné
   var telConn = (document.getElementById('co-tel')||{value:''}).value.trim();
   if (telConn) {
     document.getElementById('forgot-tel').value = telConn;
-    // Si utilisateur existe, afficher son nom
-    var users = getUsers();
-    if (users[telConn] && users[telConn].nom) {
-      var existInfo = document.getElementById('forgot-user-info');
-      if (existInfo) {
-        existInfo.textContent = 'Compte trouvé : ' + users[telConn].nom;
-        existInfo.style.display = 'block';
-      }
-    }
+    forgotAutoFill(telConn); // async — affichera le nom quand disponible
   }
 }
 
@@ -1753,7 +1910,7 @@ function showLogin() {
   document.getElementById('tc').style.display = 'block';
 }
 
-function resetPassword() {
+async function resetPassword() {
   if(forgotBlocked) {
     showToast('⛔ Trop de tentatives. Réessayez dans 5 minutes.');
     return;
@@ -1764,11 +1921,9 @@ function resetPassword() {
 
   if(!tel || !couleur) { showToast('⚠️ Remplissez tous les champs'); return; }
 
-  var users = getUsers();
-  var user = users[tel];
+  var user = await sbGetUser(tel);
   if(!user) { showToast('❌ Numéro non trouvé.'); return; }
 
-  // Vérifier couleur
   if(user.couleur !== couleur) {
     forgotAttempts++;
     var attEl = document.getElementById('forgot-attempts');
@@ -1787,7 +1942,6 @@ function resetPassword() {
     return;
   }
 
-  // Couleur correcte — afficher champ nouveau code
   var nbEl = document.getElementById('new-pwd-block');
   if(nbEl.style.display === 'none') {
     nbEl.style.display = 'block';
@@ -1795,13 +1949,14 @@ function resetPassword() {
     return;
   }
 
-  // Valider nouveau code
   if(!newPwd || newPwd.length < 4) { showToast('⚠️ Code secret de 4 chiffres requis'); return; }
-  user.pwd = newPwd;
-  users[tel] = user;
-  saveUsers(users);
-  showToast('✅ Code secret mis à jour ! Reconnectez-vous.');
-  showLogin();
+  var ok = await sbUpdateUser(tel, { pwd: newPwd });
+  if (ok) {
+    showToast('✅ Code secret mis à jour ! Reconnectez-vous.');
+    showLogin();
+  } else {
+    showToast('❌ Erreur lors de la mise à jour. Réessayez.');
+  }
 }
 
 // ===== CONNEXION =====
@@ -1823,7 +1978,7 @@ function checkLoginBeforePublish() {
   }
 }
 
-function inscrireUser() {
+async function inscrireUser() {
   var nom     = document.getElementById('reg-nom').value.trim();
   var tel     = document.getElementById('reg-tel').value.trim();
   var p1      = document.getElementById('pwd1').value;
@@ -1836,31 +1991,31 @@ function inscrireUser() {
   if (!couleur)       { showToast('⚠️ Entrez votre couleur préférée'); return; }
   if (p1 !== p2)      { showToast('❌ Les codes secrets ne correspondent pas'); return; }
 
-  var users = getUsers();
-  if(users[tel]) { showToast('⚠️ Ce numéro est déjà inscrit. Connectez-vous.'); return; }
+  showToast('⏳ Inscription en cours...');
 
-  users[tel] = { nom: nom, tel: tel, pwd: p1, couleur: couleur, grade: gradeInsc };
-  saveUsers(users);
+  // Vérifier si le numéro existe déjà
+  var existing = await sbGetUser(tel);
+  if (existing) { showToast('⚠️ Ce numéro est déjà inscrit. Connectez-vous.'); return; }
+
+  var userData = { nom: nom, tel: tel, pwd: p1, couleur: couleur, grade: gradeInsc };
+  var ok = await sbCreateUser(userData);
+  if (!ok) { showToast('❌ Erreur lors de l\'inscription. Réessayez.'); return; }
+
   isLoggedIn = true;
-  currentUserData = users[tel];
-  saveCurrentUser(users[tel]);
+  currentUserData = userData;
+  saveCurrentUser(userData);
   updateNavBtn();
 
   showToast('✅ Inscription réussie ! Bienvenue '+nom+' 🎉');
   setTimeout(function(){
     go('s2'); nav(document.querySelectorAll('.bni')[2]);
-    // Pré-remplir nom/tel dans le formulaire publication
     var fNom = document.getElementById('f-nom');
     var fTel = document.getElementById('f-tel');
     if (fNom && !fNom.value) fNom.value = nom;
     if (fTel && !fTel.value) fTel.value = tel;
     goFormStep(1);
-    // Pré-remplir grade si renseigné dans inscription
     var fGrade = document.getElementById('f-grade');
-    if (fGrade && users[tel].grade) {
-      fGrade.value = users[tel].grade;
-      autoFillDisc(users[tel].grade);
-    }
+    if (fGrade && gradeInsc) { fGrade.value = gradeInsc; autoFillDisc(gradeInsc); }
   }, 800);
 }
 
@@ -1875,13 +2030,13 @@ function deconnecterUser() {
   go('s1'); nav(document.querySelectorAll('.bni')[0]);
 }
 
-function connecterUser() {
+async function connecterUser() {
   var tel = document.getElementById('co-tel').value.trim();
   var pwd = document.getElementById('co-pwd').value;
   if (!tel || !pwd) { showToast('⚠️ Remplissez téléphone et code secret'); return; }
 
-  var users = getUsers();
-  var user = users[tel];
+  showToast('⏳ Connexion en cours...');
+  var user = await sbGetUser(tel);
   if(!user)          { showToast('❌ Numéro non trouvé. Inscrivez-vous.'); return; }
   if(user.pwd !== pwd) { showToast('❌ Code secret incorrect.'); return; }
 
@@ -1890,6 +2045,11 @@ function connecterUser() {
   saveCurrentUser(user);
   updateNavBtn();
   showToast('✅ Connexion réussie ! Bienvenue '+user.nom+' 🎉');
+
+  // Charger les annonces depuis Supabase
+  mesAnnonces = await sbGetMesAnnonces(tel);
+  renderMesAnnonces();
+
   var section = document.getElementById('mes-ann-compte');
   if(section) section.style.display = 'block';
   renderMesAnnoncesCompte();
@@ -2208,15 +2368,47 @@ function shareToFacebook(nom, grade, disc, reg, prov) {
   window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent('https://fasopermut.com') + '&quote=' + encodeURIComponent(shareAnnonce(nom, grade, disc, reg, prov)), '_blank');
 }
 
-// ===== INIT =====
-buildTicker();
-buildDebloqTicker();
-filterAnn();
-renderFreeBanner();
-updateDebloquerButtons();
-runMatchingEngine();
-runSmartNotifications();
-schedulePushNotifs();
+// ===== INIT PRINCIPALE =====
+async function initApp() {
+  buildTicker();
+  buildDebloqTicker();
+  renderFreeBanner();
+  updateDebloquerButtons();
+
+  // Charger toutes les annonces depuis Supabase
+  var container = document.getElementById('dynamic-ann-list');
+  if (container) {
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--txt2);font-size:13px">⏳ Chargement des annonces...</div>';
+    try {
+      var annonces = await sbGetAnnonces();
+      container.innerHTML = '';
+      if (annonces.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--txt2);font-size:13px;font-style:italic">Aucune annonce pour le moment. Soyez le premier à publier !</div>';
+      } else {
+        // Afficher du plus récent au plus ancien
+        annonces.forEach(function(a) {
+          // Normaliser les champs pour compatibilité avec addAnnToS3
+          a.regsDest  = a.regs_dest  || [];
+          a.provsDest = a.provs_dest || [];
+          a.ts = a.created_at ? new Date(a.created_at).getTime() : Date.now();
+          addAnnToS3(a);
+        });
+      }
+    } catch(e) {
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:#e53935;font-size:13px">❌ Impossible de charger les annonces. Vérifiez votre connexion.</div>';
+    }
+  }
+
+  filterAnn();
+  runMatchingEngine();
+  runSmartNotifications();
+  schedulePushNotifs();
+
+  // Activer le temps réel
+  setupRealtimeAnnonces();
+}
+
+initApp();
 
 
 // ===== AUTO-REMPLISSAGE DISCIPLINE SELON GRADE =====
@@ -2511,21 +2703,14 @@ function openAdmin() {
   document.getElementById('o-admin').classList.add('on');
 }
 
-function renderAdminPanel() {
-  var users = getUsers();
-  var userList = Object.values(users);
-  var cards = document.querySelectorAll('.ann-card');
-
-  // Statistiques
-  document.getElementById('adm-stat-users').textContent = userList.length;
-  document.getElementById('adm-stat-ann').textContent = cards.length;
-  document.getElementById('adm-stat-regions').textContent = (function(){
-    var regs = new Set();
-    cards.forEach(function(c){ if(c.dataset.reg) regs.add(c.dataset.reg); });
-    return regs.size;
-  })();
+async function renderAdminPanel() {
+  var stats = await sbGetAdminStats();
+  document.getElementById('adm-stat-users').textContent = stats.users;
+  document.getElementById('adm-stat-ann').textContent = stats.annonces;
+  document.getElementById('adm-stat-regions').textContent = stats.regions;
 
   // Liste utilisateurs
+  var userList = await sbGetAdminUsers();
   var uHtml = userList.length ? userList.map(function(u) {
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gris2);font-size:12px">'
       + '<div><b style="color:var(--bleu)">'+escH(u.nom)+'</b><br><span style="color:var(--txt2)">📞 '+escH(u.tel)+'</span></div>'
@@ -2535,44 +2720,52 @@ function renderAdminPanel() {
   document.getElementById('adm-user-list').innerHTML = uHtml;
 
   // Liste annonces
-  var aHtml = '';
-  cards.forEach(function(c, idx) {
-    var nomEl = c.querySelector('.ann-nom');
-    var discEl = c.querySelector('.val');
-    var nom = nomEl ? nomEl.textContent.replace('👤 ','') : 'Annonce '+(idx+1);
-    var disc = c.dataset.disc || '';
-    var reg = c.dataset.reg || '';
-    aHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gris2);font-size:12px">'
-      + '<div><b style="color:var(--bleu)">'+escH(nom)+'</b><br><span style="color:var(--txt2)">'+escH(disc)+' · '+escH(reg)+'</span></div>'
-      + '<button onclick="adminDeleteAnn(this)" style="background:#ffebee;color:#c62828;border:1px solid #ffcdd2;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">🗑 Supp.</button>'
+  var annList = await sbGetAdminAnnonces();
+  var aHtml = annList.length ? annList.map(function(a) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gris2);font-size:12px">'
+      + '<div><b style="color:var(--bleu)">'+escH(a.nom)+'</b><br><span style="color:var(--txt2)">'+escH(a.disc||'')+'·'+escH(a.reg||'')+'</span></div>'
+      + '<button onclick="adminDeleteAnnById('+a.id+')" style="background:#ffebee;color:#c62828;border:1px solid #ffcdd2;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">🗑 Supp.</button>'
       + '</div>';
-  });
-  document.getElementById('adm-ann-list').innerHTML = aHtml || '<p style="font-size:12px;color:var(--txt2);text-align:center;padding:10px">Aucune annonce.</p>';
+  }).join('') : '<p style="font-size:12px;color:var(--txt2);text-align:center;padding:10px">Aucune annonce.</p>';
+  document.getElementById('adm-ann-list').innerHTML = aHtml;
 }
 
-function adminBanUser(tel) {
-  if (!confirm('Bannir et supprimer l\'utilisateur '+tel+' ?')) return;
-  var users = getUsers();
-  delete users[tel];
-  saveUsers(users);
-  showToast('✅ Utilisateur supprimé.');
-  renderAdminPanel();
+async function adminBanUser(tel) {
+  if (!confirm('Bannir et supprimer l\'utilisateur '+tel+' et toutes ses annonces ?')) return;
+  var ok = await sbDeleteUser(tel);
+  if (ok) {
+    // Retirer ses cartes du DOM
+    document.querySelectorAll('.ann-card').forEach(function(c){
+      if ((c.dataset.tel||'') === tel) c.remove();
+    });
+    filterAnn();
+    showToast('✅ Utilisateur banni et supprimé.');
+    renderAdminPanel();
+  } else {
+    showToast('❌ Erreur lors de la suppression.');
+  }
+}
+
+async function adminDeleteAnnById(id) {
+  if (!confirm('Supprimer cette annonce ?')) return;
+  var ok = await sbDeleteAnnonce(id);
+  if (ok) {
+    var card = document.querySelector('.ann-card[data-id="'+id+'"]');
+    if (card) { card.remove(); filterAnn(); }
+    showToast('✅ Annonce supprimée.');
+    renderAdminPanel();
+  } else {
+    showToast('❌ Erreur lors de la suppression.');
+  }
 }
 
 function adminDeleteAnn(btn) {
-  var allAdmRows = document.querySelectorAll('#adm-ann-list > div');
-  var idx = -1;
-  for (var k = 0; k < allAdmRows.length; k++) {
-    if (allAdmRows[k].contains(btn)) { idx = k; break; }
-  }
-  var cards = document.querySelectorAll('.ann-card');
-  if (idx >= 0 && cards[idx]) {
-    if (!confirm('Supprimer cette annonce ?')) return;
-    cards[idx].remove();
-    filterAnn();
-    showToast('✅ Annonce supprimée.');
-    renderAdminPanel();
-  }
+  // Ancienne méthode DOM conservée par compatibilité - redirige vers la nouvelle
+  var row = btn.closest('div[style*="display:flex"]');
+  if (!row) return;
+  // Trouver l'id dans le bouton onclick
+  var match = btn.getAttribute('onclick').match(/adminDeleteAnnById\((\d+)\)/);
+  if (match) adminDeleteAnnById(parseInt(match[1]));
 }
 
 function adminTabSwitch(tab) {
