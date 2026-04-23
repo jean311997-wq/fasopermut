@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>FasoPermut – Permutations des Enseignants BF</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://vbruosulizonagtzkrip.supabase.co" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --vert:#1a7a4a;--vert2:#22a05e;--vert3:#e6f5ee;
@@ -2774,7 +2775,24 @@ async function sbGetAllAnnonces() {
   } catch(e) { return []; }
 }
 
+// Charge Chart.js à la demande (lazy loading) - évite de bloquer la page d'accueil
+var _chartJsPromise = null;
+function loadChartJS() {
+  if (window.Chart) return Promise.resolve();
+  if (_chartJsPromise) return _chartJsPromise;
+  _chartJsPromise = new Promise(function(resolve, reject) {
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+    s.onload = function(){ resolve(); };
+    s.onerror = function(){ _chartJsPromise = null; reject(new Error('Chart.js load failed')); };
+    document.head.appendChild(s);
+  });
+  return _chartJsPromise;
+}
+
 async function renderAdminPanel() {
+  // Charge Chart.js en parallèle avec les données (seulement pour l'admin)
+  var chartJsReady = loadChartJS();
   // Charge toutes les données une seule fois
   var users = await sbGetAllUsers();
   var annonces = await sbGetAllAnnonces();
@@ -2807,8 +2825,8 @@ async function renderAdminPanel() {
   // Remplit les filtres (grades + régions) à partir des données réelles
   adminFillFilters(users, annonces);
 
-  // Dessine les graphiques
-  adminDrawCharts(users, annonces);
+  // Dessine les graphiques (attend que Chart.js soit chargé)
+  chartJsReady.then(function(){ adminDrawCharts(users, annonces); }).catch(function(e){ console.warn('Chart.js non disponible:', e); });
 
   // Remplit les différentes listes
   adminRenderUsers();
