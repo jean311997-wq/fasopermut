@@ -6,7 +6,7 @@
 <title>FasoPermut – Permutations des Enseignants BF</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://vbruosulizonagtzkrip.supabase.co" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script" crossorigin>
 <style>
 :root{
   --vert:#1a7a4a;--vert2:#22a05e;--vert3:#e6f5ee;
@@ -1193,60 +1193,93 @@ footer b{color:#4fc878}
 // ===== SUPABASE CONFIG =====
 var SUPABASE_URL = 'https://vbruosulizonagtzkrip.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_RQc9-Hict_-GM1SRV9hDAg_LOdhCEjk';
-var supabase = null;
-// Initialisation différée : le script Supabase est chargé avec `defer`, il devient dispo après le parsing du HTML.
-// Les fonctions ci-dessous sont toutes appelées sur interaction utilisateur (après DOMContentLoaded), donc `supabase` sera prêt.
-function _initSupabase(){
-  if (!supabase && window.supabase && window.supabase.createClient) {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Client Supabase chargé à la demande pour ne pas bloquer la page d'accueil.
+// IMPORTANT : on n'utilise PAS `var supabase = ...` au niveau global car ça entre
+// en conflit avec `window.supabase` (la lib exposée par le CDN). On garde le client
+// dans une variable interne `_sbClient` et chaque fonction sbXxx fait `await getSb()`.
+var _sbClient = null;
+var _sbLibLoading = null;
+
+function getSb() {
+  if (_sbClient) return Promise.resolve(_sbClient);
+  if (!_sbLibLoading) {
+    _sbLibLoading = new Promise(function(resolve){
+      // Si le CDN a déjà été chargé (préchargement par <link rel=preload>), on l'utilise directement
+      if (window.supabase && window.supabase.createClient) {
+        _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        resolve(_sbClient);
+        return;
+      }
+      // Sinon, on injecte le script
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      s.async = true;
+      s.onload = function(){
+        try {
+          if (window.supabase && window.supabase.createClient) {
+            _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          }
+        } catch(e){ console.error('Supabase init error:', e); }
+        resolve(_sbClient);
+      };
+      s.onerror = function(){ _sbLibLoading = null; resolve(null); };
+      document.head.appendChild(s);
+    });
   }
-  return supabase;
+  return _sbLibLoading;
 }
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', _initSupabase);
-} else {
-  _initSupabase();
-}
+
+// Précharge Supabase en arrière-plan dès que la page est idle (après l'affichage initial).
+// Comme ça au premier clic utilisateur, le client est déjà prêt → pas d'attente.
+(function _prefetchSupabase(){
+  var prefetch = function(){ getSb(); };
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(prefetch, { timeout: 1500 });
+  } else {
+    setTimeout(prefetch, 300);
+  }
+})();
 
 // ===== SUPABASE HELPERS =====
 async function sbGetUser(tel) {
-  if (!supabase) return null;
+  var sb = await getSb(); if (!sb) return null;
   try {
-    var { data, error } = await supabase.from('users').select('*').eq('tel', tel).single();
+    var { data, error } = await sb.from('users').select('*').eq('tel', tel).single();
     if (error) return null;
     return data;
   } catch(e) { return null; }
 }
 
 async function sbCreateUser(userData) {
-  if (!supabase) return false;
+  var sb = await getSb(); if (!sb) return false;
   try {
-    var { error } = await supabase.from('users').insert([userData]);
+    var { error } = await sb.from('users').insert([userData]);
     return !error;
   } catch(e) { return false; }
 }
 
 async function sbUpdateUser(tel, updates) {
-  if (!supabase) return false;
+  var sb = await getSb(); if (!sb) return false;
   try {
-    var { error } = await supabase.from('users').update(updates).eq('tel', tel);
+    var { error } = await sb.from('users').update(updates).eq('tel', tel);
     return !error;
   } catch(e) { return false; }
 }
 
 async function sbDeleteUser(tel) {
-  if (!supabase) return false;
+  var sb = await getSb(); if (!sb) return false;
   try {
-    await supabase.from('annonces').delete().eq('tel', tel);
-    var { error } = await supabase.from('users').delete().eq('tel', tel);
+    await sb.from('annonces').delete().eq('tel', tel);
+    var { error } = await sb.from('users').delete().eq('tel', tel);
     return !error;
   } catch(e) { return false; }
 }
 
 async function sbGetAnnonces(filters) {
-  if (!supabase) return [];
+  var sb = await getSb(); if (!sb) return [];
   try {
-    var query = supabase.from('annonces').select('*').order('created_at', { ascending: false });
+    var query = sb.from('annonces').select('*').order('created_at', { ascending: false });
     if (filters) {
       if (filters.grade) query = query.eq('grade', filters.grade);
       if (filters.disc)  query = query.eq('disc', filters.disc);
@@ -1260,73 +1293,74 @@ async function sbGetAnnonces(filters) {
 }
 
 async function sbInsertAnnonce(ann) {
-  if (!supabase) return null;
+  var sb = await getSb(); if (!sb) return null;
   try {
-    var { data, error } = await supabase.from('annonces').insert([ann]).select().single();
+    var { data, error } = await sb.from('annonces').insert([ann]).select().single();
     if (error) { console.error('sbInsertAnnonce', error); return null; }
     return data;
   } catch(e) { return null; }
 }
 
 async function sbDeleteAnnonce(id) {
-  if (!supabase) return false;
+  var sb = await getSb(); if (!sb) return false;
   try {
-    var { error } = await supabase.from('annonces').delete().eq('id', id);
+    var { error } = await sb.from('annonces').delete().eq('id', id);
     return !error;
   } catch(e) { return false; }
 }
 
 async function sbCountAnnonces(tel) {
-  if (!supabase) return 0;
+  var sb = await getSb(); if (!sb) return 0;
   try {
-    var { count, error } = await supabase.from('annonces').select('*', { count: 'exact', head: true }).eq('tel', tel);
+    var { count, error } = await sb.from('annonces').select('*', { count: 'exact', head: true }).eq('tel', tel);
     if (error) return 0;
     return count || 0;
   } catch(e) { return 0; }
 }
 
 async function sbGetMesAnnonces(tel) {
-  if (!supabase) return [];
+  var sb = await getSb(); if (!sb) return [];
   try {
-    var { data, error } = await supabase.from('annonces').select('*').eq('tel', tel).order('created_at', { ascending: false });
+    var { data, error } = await sb.from('annonces').select('*').eq('tel', tel).order('created_at', { ascending: false });
     if (error) return [];
     return data || [];
   } catch(e) { return []; }
 }
 
 async function sbGetAdminStats() {
-  if (!supabase) return { users: 0, annonces: 0, regions: 0 };
+  var sb = await getSb(); if (!sb) return { users: 0, annonces: 0, regions: 0 };
   try {
-    var { count: uCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
-    var { count: aCount } = await supabase.from('annonces').select('*', { count: 'exact', head: true });
-    var { data: regData } = await supabase.from('annonces').select('reg');
+    var { count: uCount } = await sb.from('users').select('*', { count: 'exact', head: true });
+    var { count: aCount } = await sb.from('annonces').select('*', { count: 'exact', head: true });
+    var { data: regData } = await sb.from('annonces').select('reg');
     var regions = regData ? new Set(regData.map(function(r){ return r.reg; })).size : 0;
     return { users: uCount || 0, annonces: aCount || 0, regions: regions };
   } catch(e) { return { users: 0, annonces: 0, regions: 0 }; }
 }
 
 async function sbGetAdminUsers() {
-  if (!supabase) return [];
+  var sb = await getSb(); if (!sb) return [];
   try {
-    var { data, error } = await supabase.from('users').select('nom,tel').order('created_at', { ascending: false });
+    var { data, error } = await sb.from('users').select('nom,tel').order('created_at', { ascending: false });
     if (error) return [];
     return data || [];
   } catch(e) { return []; }
 }
 
 async function sbGetAdminAnnonces() {
-  if (!supabase) return [];
+  var sb = await getSb(); if (!sb) return [];
   try {
-    var { data, error } = await supabase.from('annonces').select('*').order('created_at', { ascending: false });
+    var { data, error } = await sb.from('annonces').select('*').order('created_at', { ascending: false });
     if (error) return [];
     return data || [];
   } catch(e) { return []; }
 }
 
 // Réponse Supabase temps réel : écoute les nouvelles annonces
-function setupRealtimeAnnonces() {
-  if (!supabase) return;
-  supabase
+async function setupRealtimeAnnonces() {
+  var sb = await getSb();
+  if (!sb) return;
+  sb
     .channel('annonces-live')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'annonces' }, function(payload) {
       var a = payload.new;
@@ -1373,13 +1407,15 @@ var REGIONS_PROVINCES = {
 // ===== COMPTEUR ANNONCES DEPUIS SUPABASE =====
 async function updateStatAnnonces() {
   try {
-    if (!supabase) return;
-    var { count } = await supabase.from('annonces').select('*', { count: 'exact', head: true });
+    var sb = await getSb();
+    if (!sb) return;
+    var { count } = await sb.from('annonces').select('*', { count: 'exact', head: true });
     var el = document.getElementById('stat-annonces');
     if (el && count !== null) el.textContent = '+' + (count + 1240);
   } catch(e) {}
 }
-updateStatAnnonces();
+// Appelé après chargement de Supabase (pas bloquant au démarrage)
+setTimeout(updateStatAnnonces, 100);
 
 
 // Les données users sont maintenant dans Supabase
@@ -2771,18 +2807,18 @@ function openAdmin() {
 }
 
 async function sbGetAllUsers() {
-  if (!supabase) return [];
+  var sb = await getSb(); if (!sb) return [];
   try {
-    var { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+    var { data, error } = await sb.from('users').select('*').order('created_at', { ascending: false });
     if (error) return [];
     return data || [];
   } catch(e) { return []; }
 }
 
 async function sbGetAllAnnonces() {
-  if (!supabase) return [];
+  var sb = await getSb(); if (!sb) return [];
   try {
-    var { data, error } = await supabase.from('annonces').select('*').order('created_at', { ascending: false });
+    var { data, error } = await sb.from('annonces').select('*').order('created_at', { ascending: false });
     if (error) return [];
     return data || [];
   } catch(e) { return []; }
