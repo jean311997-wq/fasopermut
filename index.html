@@ -6,7 +6,7 @@
 <title>FasoPermut – Permutations des Enseignants BF</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://vbruosulizonagtzkrip.supabase.co" crossorigin>
-<link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
 <style>
 :root{
   --vert:#1a7a4a;--vert2:#22a05e;--vert3:#e6f5ee;
@@ -1194,52 +1194,38 @@ footer b{color:#4fc878}
 var SUPABASE_URL = 'https://vbruosulizonagtzkrip.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_RQc9-Hict_-GM1SRV9hDAg_LOdhCEjk';
 
-// Client Supabase chargé à la demande pour ne pas bloquer la page d'accueil.
-// IMPORTANT : on n'utilise PAS `var supabase = ...` au niveau global car ça entre
-// en conflit avec `window.supabase` (la lib exposée par le CDN). On garde le client
-// dans une variable interne `_sbClient` et chaque fonction sbXxx fait `await getSb()`.
+// Client Supabase : la lib est chargée en ASYNC dans le <head> pour ne pas bloquer le rendu.
+// IMPORTANT : on n'utilise PAS `var supabase` au niveau global car `window.supabase` est
+// réservé par la lib du CDN. On stocke le client dans `_sbClient` et on y accède via getSb().
 var _sbClient = null;
-var _sbLibLoading = null;
 
 function getSb() {
   if (_sbClient) return Promise.resolve(_sbClient);
-  if (!_sbLibLoading) {
-    _sbLibLoading = new Promise(function(resolve){
-      // Si le CDN a déjà été chargé (préchargement par <link rel=preload>), on l'utilise directement
-      if (window.supabase && window.supabase.createClient) {
-        _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        resolve(_sbClient);
-        return;
-      }
-      // Sinon, on injecte le script
-      var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-      s.async = true;
-      s.onload = function(){
-        try {
-          if (window.supabase && window.supabase.createClient) {
-            _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-          }
-        } catch(e){ console.error('Supabase init error:', e); }
-        resolve(_sbClient);
-      };
-      s.onerror = function(){ _sbLibLoading = null; resolve(null); };
-      document.head.appendChild(s);
-    });
-  }
-  return _sbLibLoading;
-}
 
-// Précharge Supabase en arrière-plan dès que la page est idle (après l'affichage initial).
-// Comme ça au premier clic utilisateur, le client est déjà prêt → pas d'attente.
-(function _prefetchSupabase(){
-  var prefetch = function(){ getSb(); };
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(prefetch, { timeout: 1500 });
-  } else {
-    setTimeout(prefetch, 300);
+  // Le CDN est peut-être déjà chargé : on essaie immédiatement
+  if (window.supabase && window.supabase.createClient) {
+    try {
+      _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      return Promise.resolve(_sbClient);
+    } catch(e){ console.error('Supabase init error:', e); }
   }
-})();
+
+  // Sinon, on attend que le script async du <head> finisse (polling toutes les 50ms, max 15s)
+  return new Promise(function(resolve){
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries++;
+      if (window.supabase && window.supabase.createClient) {
+        clearInterval(iv);
+        try { _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){ console.error(e); }
+        resolve(_sbClient);
+      } else if (tries > 300) { // 15 secondes max
+        clearInterval(iv);
+        resolve(null);
+      }
+    }, 50);
+  });
+}
 
 // ===== SUPABASE HELPERS =====
 async function sbGetUser(tel) {
