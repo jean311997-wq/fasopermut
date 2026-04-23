@@ -6,7 +6,7 @@
 <title>FasoPermut – Permutations des Enseignants BF</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://vbruosulizonagtzkrip.supabase.co" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <style>
 :root{
   --vert:#1a7a4a;--vert2:#22a05e;--vert3:#e6f5ee;
@@ -1193,7 +1193,20 @@ footer b{color:#4fc878}
 // ===== SUPABASE CONFIG =====
 var SUPABASE_URL = 'https://vbruosulizonagtzkrip.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_RQc9-Hict_-GM1SRV9hDAg_LOdhCEjk';
-var supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+var supabase = null;
+// Initialisation différée : le script Supabase est chargé avec `defer`, il devient dispo après le parsing du HTML.
+// Les fonctions ci-dessous sont toutes appelées sur interaction utilisateur (après DOMContentLoaded), donc `supabase` sera prêt.
+function _initSupabase(){
+  if (!supabase && window.supabase && window.supabase.createClient) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+  return supabase;
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _initSupabase);
+} else {
+  _initSupabase();
+}
 
 // ===== SUPABASE HELPERS =====
 async function sbGetUser(tel) {
