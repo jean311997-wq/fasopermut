@@ -1704,16 +1704,7 @@ async function publierAnnonce() {
     tel2: (document.getElementById('f-tel2')||{value:''}).value.trim()
   };
 
-  // Anti-doublon
-  var isDuplicate = mesAnnonces.some(function(existing) {
-    return existing.grade === ann.grade && existing.disc === ann.disc && existing.reg === ann.reg && existing.prov === ann.prov;
-  });
-  if (isDuplicate) {
-    btn.disabled = false;
-    btn.innerHTML = '✅ PUBLIER MON ANNONCE — GRATUIT';
-    showToast('⚠️ Vous avez déjà publié une annonce identique.');
-    return;
-  }
+  // Pas d'anti-doublon : l'utilisateur peut publier jusqu'à MAX_ANNONCES annonces identiques ou différentes
 
   // Insérer dans Supabase
   var inserted = await sbInsertAnnonce(ann);
