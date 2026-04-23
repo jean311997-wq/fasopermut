@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>FasoPermut – Permutations des Enseignants BF</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --vert:#1a7a4a;--vert2:#22a05e;--vert3:#e6f5ee;
@@ -992,45 +993,104 @@ footer b{color:#4fc878}
 
 <!-- ===== MODALE ADMIN ===== -->
 <div class="overlay" id="o-admin">
-  <div class="modal" style="max-height:85vh;overflow-y:auto;padding-bottom:20px">
+  <div class="modal" style="max-height:92vh;overflow-y:auto;padding-bottom:20px;max-width:720px">
     <div style="text-align:center;margin-bottom:14px">
       <div style="font-size:22px">⚙️</div>
-      <div style="font-size:17px;font-weight:700;color:var(--bleu)">Dashboard Admin</div>
-      <div style="font-size:11px;color:var(--txt2)">FasoPermut — Panneau de contrôle</div>
+      <div style="font-size:18px;font-weight:700;color:var(--bleu)">Dashboard Admin</div>
+      <div style="font-size:11px;color:var(--txt2)">FasoPermut — Panneau de contrôle complet</div>
+      <div style="font-size:10px;color:var(--txt2);margin-top:4px">🔄 <span id="adm-last-refresh">—</span> · <button onclick="renderAdminPanel()" style="border:none;background:none;color:var(--vert);font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline">Actualiser</button></div>
     </div>
 
-    <!-- Stats -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+    <!-- 4 KPI Cards -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px">
       <div style="background:var(--vert3);border-radius:10px;padding:10px;text-align:center">
-        <div style="font-size:22px;font-weight:700;color:var(--vert)" id="adm-stat-users">0</div>
-        <div style="font-size:10px;color:var(--txt2)">Utilisateurs</div>
+        <div style="font-size:22px;font-weight:700;color:var(--vert)" id="adm-kpi-users">0</div>
+        <div style="font-size:10px;color:var(--txt2)">👥 Utilisateurs</div>
+        <div style="font-size:9px;color:var(--vert);font-weight:700" id="adm-kpi-users-7d">+0 cette semaine</div>
       </div>
       <div style="background:#e3f2fd;border-radius:10px;padding:10px;text-align:center">
-        <div style="font-size:22px;font-weight:700;color:#1565c0" id="adm-stat-ann">0</div>
-        <div style="font-size:10px;color:var(--txt2)">Annonces</div>
+        <div style="font-size:22px;font-weight:700;color:#1565c0" id="adm-kpi-ann">0</div>
+        <div style="font-size:10px;color:var(--txt2)">📋 Annonces actives</div>
+        <div style="font-size:9px;color:#1565c0;font-weight:700" id="adm-kpi-ann-7d">+0 cette semaine</div>
       </div>
       <div style="background:#fff3e0;border-radius:10px;padding:10px;text-align:center">
-        <div style="font-size:22px;font-weight:700;color:var(--orange)" id="adm-stat-regions">0</div>
-        <div style="font-size:10px;color:var(--txt2)">Régions actives</div>
+        <div style="font-size:22px;font-weight:700;color:var(--orange)" id="adm-kpi-matchs">0</div>
+        <div style="font-size:10px;color:var(--txt2)">🎯 Matchs potentiels</div>
+        <div style="font-size:9px;color:var(--orange);font-weight:700" id="adm-kpi-matchs-parf">0 parfaits</div>
+      </div>
+      <div style="background:#f3e5f5;border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:#7b1fa2" id="adm-kpi-regions">0</div>
+        <div style="font-size:10px;color:var(--txt2)">🗺️ Régions actives</div>
+        <div style="font-size:9px;color:#7b1fa2;font-weight:700" id="adm-kpi-countdown">—</div>
       </div>
     </div>
 
     <!-- Onglets -->
-    <div style="display:flex;background:var(--gris);border-radius:8px;padding:3px;margin-bottom:12px">
-      <button class="adm-tab-btn active" onclick="adminTabSwitch('users')" style="flex:1;padding:8px;border:none;background:#fff;border-radius:6px;font-size:12px;font-weight:700;color:var(--bleu);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.1)">👥 Utilisateurs</button>
-      <button class="adm-tab-btn" onclick="adminTabSwitch('ann')" style="flex:1;padding:8px;border:none;background:none;border-radius:6px;font-size:12px;font-weight:600;color:var(--txt2);cursor:pointer">📋 Annonces</button>
+    <div style="display:flex;background:var(--gris);border-radius:8px;padding:3px;margin-bottom:12px;flex-wrap:wrap;gap:2px">
+      <button class="adm-tab-btn active" onclick="adminTabSwitch('vue',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:#fff;border-radius:6px;font-size:11px;font-weight:700;color:var(--bleu);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.1)">📊 Vue</button>
+      <button class="adm-tab-btn" onclick="adminTabSwitch('users',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">👥 Users</button>
+      <button class="adm-tab-btn" onclick="adminTabSwitch('ann',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">📋 Annonces</button>
+      <button class="adm-tab-btn" onclick="adminTabSwitch('match',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">🎯 Matchs</button>
+      <button class="adm-tab-btn" onclick="adminTabSwitch('alert',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">⚠️ Alertes</button>
     </div>
 
-    <!-- Pane utilisateurs -->
-    <div class="adm-pane" id="adm-pane-users">
-      <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Liste des membres</div>
+    <!-- Pane VUE D'ENSEMBLE -->
+    <div class="adm-pane" id="adm-pane-vue">
+      <div style="background:#fff;border:1px solid var(--gris2);border-radius:10px;padding:10px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;margin-bottom:6px">🥧 Répartition par grade</div>
+        <div style="position:relative;height:200px"><canvas id="adm-chart-grades"></canvas></div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--gris2);border-radius:10px;padding:10px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;margin-bottom:6px">📍 Top régions où les gens SONT</div>
+        <div style="position:relative;height:180px"><canvas id="adm-chart-reg-act"></canvas></div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--gris2);border-radius:10px;padding:10px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;margin-bottom:6px">🎯 Top régions DEMANDÉES</div>
+        <div style="position:relative;height:180px"><canvas id="adm-chart-reg-des"></canvas></div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--gris2);border-radius:10px;padding:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;margin-bottom:6px">📈 Inscriptions sur 30 jours</div>
+        <div style="position:relative;height:180px"><canvas id="adm-chart-signup"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Pane UTILISATEURS -->
+    <div class="adm-pane" id="adm-pane-users" style="display:none">
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+        <input type="text" id="adm-user-search" placeholder="🔍 Nom ou téléphone..." oninput="adminRenderUsers()" style="flex:2;min-width:120px;padding:7px 10px;border:1px solid var(--gris2);border-radius:8px;font-size:12px">
+        <select id="adm-user-filter-grade" onchange="adminRenderUsers()" style="flex:1;min-width:90px;padding:7px;border:1px solid var(--gris2);border-radius:8px;font-size:11px">
+          <option value="">Tous grades</option>
+        </select>
+        <button onclick="adminExportCSV('users')" style="background:var(--vert);color:#fff;border:none;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer">📤 CSV</button>
+      </div>
+      <div style="font-size:10px;color:var(--txt2);margin-bottom:6px"><span id="adm-user-count">0</span> utilisateur(s)</div>
       <div id="adm-user-list"></div>
     </div>
 
-    <!-- Pane annonces -->
+    <!-- Pane ANNONCES -->
     <div class="adm-pane" id="adm-pane-ann" style="display:none">
-      <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Toutes les annonces publiées</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+        <input type="text" id="adm-ann-search" placeholder="🔍 Nom, école, région..." oninput="adminRenderAnnonces()" style="flex:2;min-width:120px;padding:7px 10px;border:1px solid var(--gris2);border-radius:8px;font-size:12px">
+        <select id="adm-ann-filter-reg" onchange="adminRenderAnnonces()" style="flex:1;min-width:90px;padding:7px;border:1px solid var(--gris2);border-radius:8px;font-size:11px">
+          <option value="">Toutes régions</option>
+        </select>
+        <button onclick="adminExportCSV('annonces')" style="background:var(--vert);color:#fff;border:none;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer">📤 CSV</button>
+      </div>
+      <div style="font-size:10px;color:var(--txt2);margin-bottom:6px"><span id="adm-ann-count">0</span> annonce(s)</div>
       <div id="adm-ann-list"></div>
+    </div>
+
+    <!-- Pane MATCHS -->
+    <div class="adm-pane" id="adm-pane-match" style="display:none">
+      <div style="background:var(--vert3);border-left:3px solid var(--vert);padding:10px;border-radius:8px;margin-bottom:10px;font-size:11px;color:var(--txt)">
+        💡 <b>Matchs détectés</b> : personnes dont les régions actuelles et souhaitées se croisent. Contacte-les pour les mettre en relation !
+      </div>
+      <div id="adm-match-list"></div>
+    </div>
+
+    <!-- Pane ALERTES -->
+    <div class="adm-pane" id="adm-pane-alert" style="display:none">
+      <div id="adm-alert-list"></div>
     </div>
 
     <button class="btn-ferm" onclick="cl('o-admin')" style="margin-top:14px">✅ Fermer le panneau</button>
@@ -2695,50 +2755,349 @@ function clearNotifBadge() {
 
 // ===== DASHBOARD ADMIN =====
 var ADMIN_PWD = 'admin2026'; // Changer ce mot de passe !
+var ADM_CACHE = { users: [], annonces: [], charts: {} };
+var FREE_END = new Date('2026-04-28T23:59:59');
 
 function openAdmin() {
   var pwd = prompt('🔐 Mot de passe administrateur :');
   if (pwd !== ADMIN_PWD) { showToast('❌ Accès refusé'); return; }
-  renderAdminPanel();
   document.getElementById('o-admin').classList.add('on');
+  renderAdminPanel();
+}
+
+async function sbGetAllUsers() {
+  if (!supabase) return [];
+  try {
+    var { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+    if (error) return [];
+    return data || [];
+  } catch(e) { return []; }
+}
+
+async function sbGetAllAnnonces() {
+  if (!supabase) return [];
+  try {
+    var { data, error } = await supabase.from('annonces').select('*').order('created_at', { ascending: false });
+    if (error) return [];
+    return data || [];
+  } catch(e) { return []; }
 }
 
 async function renderAdminPanel() {
-  var stats = await sbGetAdminStats();
-  document.getElementById('adm-stat-users').textContent = stats.users;
-  document.getElementById('adm-stat-ann').textContent = stats.annonces;
-  document.getElementById('adm-stat-regions').textContent = stats.regions;
+  // Charge toutes les données une seule fois
+  var users = await sbGetAllUsers();
+  var annonces = await sbGetAllAnnonces();
+  ADM_CACHE.users = users;
+  ADM_CACHE.annonces = annonces;
 
-  // Liste utilisateurs
-  var userList = await sbGetAdminUsers();
-  var uHtml = userList.length ? userList.map(function(u) {
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gris2);font-size:12px">'
-      + '<div><b style="color:var(--bleu)">'+escH(u.nom)+'</b><br><span style="color:var(--txt2)">📞 '+escH(u.tel)+'</span></div>'
-      + '<button onclick="adminBanUser(\''+escH(u.tel)+'\')" style="background:#ffebee;color:#c62828;border:1px solid #ffcdd2;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">🚫 Bannir</button>'
-      + '</div>';
-  }).join('') : '<p style="font-size:12px;color:var(--txt2);text-align:center;padding:10px">Aucun utilisateur inscrit.</p>';
-  document.getElementById('adm-user-list').innerHTML = uHtml;
+  // KPI
+  var now = Date.now();
+  var d7 = 7*24*60*60*1000;
+  var newUsers7d = users.filter(function(u){ return u.created_at && (now - new Date(u.created_at).getTime()) < d7; }).length;
+  var newAnn7d = annonces.filter(function(a){ return a.created_at && (now - new Date(a.created_at).getTime()) < d7; }).length;
+  var regionsSet = new Set(annonces.map(function(a){ return a.reg; }).filter(Boolean));
+  var matchs = computeMatchs(annonces);
 
-  // Liste annonces
-  var annList = await sbGetAdminAnnonces();
-  var aHtml = annList.length ? annList.map(function(a) {
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gris2);font-size:12px">'
-      + '<div><b style="color:var(--bleu)">'+escH(a.nom)+'</b><br><span style="color:var(--txt2)">'+escH(a.disc||'')+'·'+escH(a.reg||'')+'</span></div>'
-      + '<button onclick="adminDeleteAnnById('+a.id+')" style="background:#ffebee;color:#c62828;border:1px solid #ffcdd2;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">🗑 Supp.</button>'
+  document.getElementById('adm-kpi-users').textContent = users.length;
+  document.getElementById('adm-kpi-users-7d').textContent = '+' + newUsers7d + ' cette semaine';
+  document.getElementById('adm-kpi-ann').textContent = annonces.length;
+  document.getElementById('adm-kpi-ann-7d').textContent = '+' + newAnn7d + ' cette semaine';
+  document.getElementById('adm-kpi-matchs').textContent = matchs.length;
+  document.getElementById('adm-kpi-matchs-parf').textContent = matchs.filter(function(m){ return m.parfait; }).length + ' parfaits';
+  document.getElementById('adm-kpi-regions').textContent = regionsSet.size;
+
+  // Countdown fin période gratuite
+  var days = Math.ceil((FREE_END.getTime() - now) / (1000*60*60*24));
+  document.getElementById('adm-kpi-countdown').textContent = days > 0 ? 'Gratuit J-' + days : 'Payant actif';
+
+  // Dernière actualisation
+  document.getElementById('adm-last-refresh').textContent = new Date().toLocaleTimeString('fr-FR');
+
+  // Remplit les filtres (grades + régions) à partir des données réelles
+  adminFillFilters(users, annonces);
+
+  // Dessine les graphiques
+  adminDrawCharts(users, annonces);
+
+  // Remplit les différentes listes
+  adminRenderUsers();
+  adminRenderAnnonces();
+  adminRenderMatchs(matchs);
+  adminRenderAlerts(users, annonces);
+}
+
+function computeMatchs(annonces) {
+  var matchs = [];
+  var seen = {};
+  for (var i=0; i<annonces.length; i++) {
+    var a = annonces[i];
+    var aDest = (a.regs_dest || []);
+    if (!a.reg || !aDest.length) continue;
+    for (var j=i+1; j<annonces.length; j++) {
+      var b = annonces[j];
+      if (a.tel === b.tel) continue;
+      var bDest = (b.regs_dest || []);
+      if (!b.reg || !bDest.length) continue;
+      // A veut aller dans la région de B ET B veut aller dans la région de A
+      if (aDest.indexOf(b.reg) !== -1 && bDest.indexOf(a.reg) !== -1) {
+        var key = [a.tel, b.tel].sort().join('|');
+        if (seen[key]) continue;
+        seen[key] = true;
+        var parfait = (a.grade === b.grade) && (a.disc === b.disc);
+        matchs.push({ a: a, b: b, parfait: parfait });
+      }
+    }
+  }
+  return matchs.sort(function(x,y){ return (y.parfait?1:0) - (x.parfait?1:0); });
+}
+
+function adminFillFilters(users, annonces) {
+  var grades = {};
+  users.forEach(function(u){ if (u.grade) grades[u.grade] = (grades[u.grade]||0)+1; });
+  annonces.forEach(function(a){ if (a.grade) grades[a.grade] = (grades[a.grade]||0)+1; });
+  var gradeSel = document.getElementById('adm-user-filter-grade');
+  if (gradeSel) {
+    var current = gradeSel.value;
+    gradeSel.innerHTML = '<option value="">Tous grades</option>' + Object.keys(grades).sort().map(function(g){
+      return '<option value="'+escH(g)+'">'+escH(g)+'</option>';
+    }).join('');
+    gradeSel.value = current;
+  }
+  var regSel = document.getElementById('adm-ann-filter-reg');
+  if (regSel) {
+    var current2 = regSel.value;
+    var regs = {};
+    annonces.forEach(function(a){ if (a.reg) regs[a.reg] = true; });
+    regSel.innerHTML = '<option value="">Toutes régions</option>' + Object.keys(regs).sort().map(function(r){
+      return '<option value="'+escH(r)+'">'+escH(r)+'</option>';
+    }).join('');
+    regSel.value = current2;
+  }
+}
+
+function adminDrawCharts(users, annonces) {
+  if (typeof Chart === 'undefined') return;
+  // 1. Camembert grades
+  var gradeCount = {};
+  annonces.forEach(function(a){ if (a.grade) gradeCount[a.grade] = (gradeCount[a.grade]||0)+1; });
+  var grLabels = Object.keys(gradeCount);
+  var grData = grLabels.map(function(k){ return gradeCount[k]; });
+  adminUpdateChart('adm-chart-grades', {
+    type: 'doughnut',
+    data: { labels: grLabels, datasets: [{ data: grData, backgroundColor: ['#1a7a4a','#22a05e','#f57c00','#1565c0','#7b1fa2','#c62828','#00897b','#ef6c00','#5e35b1','#0097a7'] }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ font:{size:9} } } } }
+  });
+
+  // 2. Régions actuelles
+  var regActCount = {};
+  annonces.forEach(function(a){ if (a.reg) regActCount[a.reg] = (regActCount[a.reg]||0)+1; });
+  var regActSorted = Object.entries(regActCount).sort(function(a,b){ return b[1]-a[1]; }).slice(0,8);
+  adminUpdateChart('adm-chart-reg-act', {
+    type: 'bar',
+    data: { labels: regActSorted.map(function(x){return x[0];}), datasets: [{ label:'Annonces', data: regActSorted.map(function(x){return x[1];}), backgroundColor:'#1a7a4a' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ ticks:{font:{size:9}, autoSkip:false, maxRotation:45 } }, y:{ beginAtZero:true, ticks:{precision:0} } } }
+  });
+
+  // 3. Régions demandées
+  var regDesCount = {};
+  annonces.forEach(function(a){ (a.regs_dest||[]).forEach(function(r){ regDesCount[r] = (regDesCount[r]||0)+1; }); });
+  var regDesSorted = Object.entries(regDesCount).sort(function(a,b){ return b[1]-a[1]; }).slice(0,8);
+  adminUpdateChart('adm-chart-reg-des', {
+    type: 'bar',
+    data: { labels: regDesSorted.map(function(x){return x[0];}), datasets: [{ label:'Demandes', data: regDesSorted.map(function(x){return x[1];}), backgroundColor:'#f57c00' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ ticks:{font:{size:9}, autoSkip:false, maxRotation:45 } }, y:{ beginAtZero:true, ticks:{precision:0} } } }
+  });
+
+  // 4. Courbe inscriptions 30j
+  var days = {};
+  var now = Date.now();
+  for (var i=29; i>=0; i--) {
+    var d = new Date(now - i*24*60*60*1000);
+    var key = d.toISOString().slice(0,10);
+    days[key] = 0;
+  }
+  users.forEach(function(u){ if (u.created_at) { var k = new Date(u.created_at).toISOString().slice(0,10); if (days[k] !== undefined) days[k]++; } });
+  var dayLabels = Object.keys(days);
+  adminUpdateChart('adm-chart-signup', {
+    type: 'line',
+    data: { labels: dayLabels.map(function(d){ return d.slice(5); }), datasets: [{ label:'Inscriptions', data: dayLabels.map(function(k){return days[k];}), borderColor:'#1565c0', backgroundColor:'rgba(21,101,192,.15)', fill:true, tension:.3 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ ticks:{font:{size:8}, maxTicksLimit:10 } }, y:{ beginAtZero:true, ticks:{precision:0} } } }
+  });
+}
+
+function adminUpdateChart(canvasId, config) {
+  var ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  if (ADM_CACHE.charts[canvasId]) { ADM_CACHE.charts[canvasId].destroy(); }
+  try { ADM_CACHE.charts[canvasId] = new Chart(ctx, config); } catch(e) { console.warn('Chart error:', e); }
+}
+
+function adminRenderUsers() {
+  var users = ADM_CACHE.users || [];
+  var q = (document.getElementById('adm-user-search')||{value:''}).value.toLowerCase().trim();
+  var g = (document.getElementById('adm-user-filter-grade')||{value:''}).value;
+  var filtered = users.filter(function(u){
+    if (g && u.grade !== g) return false;
+    if (q && ((u.nom||'').toLowerCase().indexOf(q)===-1) && ((u.tel||'').indexOf(q)===-1)) return false;
+    return true;
+  });
+  var ctEl = document.getElementById('adm-user-count');
+  if (ctEl) ctEl.textContent = filtered.length;
+  var html = filtered.length ? filtered.map(function(u) {
+    var date = u.created_at ? new Date(u.created_at).toLocaleDateString('fr-FR') : '';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border:1px solid var(--gris2);border-radius:8px;margin-bottom:5px;font-size:12px;background:#fff">'
+      + '<div style="flex:1;min-width:0"><b style="color:var(--bleu)">'+escH(u.nom||'')+'</b>'
+      + (u.grade ? ' <span style="background:var(--vert3);color:var(--vert);font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700">'+escH(u.grade)+'</span>':'')
+      + '<br><span style="color:var(--txt2);font-size:11px">📞 '+escH(u.tel||'')+'</span>'
+      + (date ? ' <span style="color:#999;font-size:10px">· '+date+'</span>':'')
+      + '</div>'
+      + '<button onclick="adminBanUser(\''+escH(u.tel||'')+'\')" style="background:#ffebee;color:#c62828;border:1px solid #ffcdd2;border-radius:6px;padding:5px 8px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">🚫 Bannir</button>'
       + '</div>';
-  }).join('') : '<p style="font-size:12px;color:var(--txt2);text-align:center;padding:10px">Aucune annonce.</p>';
-  document.getElementById('adm-ann-list').innerHTML = aHtml;
+  }).join('') : '<p style="font-size:12px;color:var(--txt2);text-align:center;padding:20px">Aucun utilisateur trouvé.</p>';
+  var el = document.getElementById('adm-user-list');
+  if (el) el.innerHTML = html;
+}
+
+function adminRenderAnnonces() {
+  var annonces = ADM_CACHE.annonces || [];
+  var q = (document.getElementById('adm-ann-search')||{value:''}).value.toLowerCase().trim();
+  var r = (document.getElementById('adm-ann-filter-reg')||{value:''}).value;
+  var filtered = annonces.filter(function(a){
+    if (r && a.reg !== r) return false;
+    if (q) {
+      var hay = ((a.nom||'')+' '+(a.etab||'')+' '+(a.reg||'')+' '+(a.prov||'')).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+  var ctEl = document.getElementById('adm-ann-count');
+  if (ctEl) ctEl.textContent = filtered.length;
+  var html = filtered.length ? filtered.map(function(a) {
+    var dest = (a.regs_dest||[]).join(', ') || '—';
+    return '<div style="padding:8px;border:1px solid var(--gris2);border-radius:8px;margin-bottom:5px;font-size:12px;background:#fff">'
+      + '<div style="display:flex;justify-content:space-between;align-items:start;gap:8px">'
+      + '<div style="flex:1;min-width:0">'
+      + '<b style="color:var(--bleu)">'+escH(a.nom||'')+'</b> '
+      + '<span style="background:var(--vert3);color:var(--vert);font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700">'+escH(a.grade||'')+'</span>'
+      + '<br><span style="color:var(--txt2);font-size:11px">📍 '+escH(a.reg||'')+' · '+escH(a.prov||'')+'</span>'
+      + '<br><span style="color:var(--orange);font-size:11px">🎯 '+escH(dest)+'</span>'
+      + '</div>'
+      + '<button onclick="adminDeleteAnnById('+a.id+')" style="background:#ffebee;color:#c62828;border:1px solid #ffcdd2;border-radius:6px;padding:5px 8px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">🗑 Supp.</button>'
+      + '</div></div>';
+  }).join('') : '<p style="font-size:12px;color:var(--txt2);text-align:center;padding:20px">Aucune annonce trouvée.</p>';
+  var el = document.getElementById('adm-ann-list');
+  if (el) el.innerHTML = html;
+}
+
+function adminRenderMatchs(matchs) {
+  var el = document.getElementById('adm-match-list');
+  if (!el) return;
+  if (!matchs.length) { el.innerHTML = '<p style="font-size:12px;color:var(--txt2);text-align:center;padding:20px">Aucun match potentiel détecté pour le moment.</p>'; return; }
+  el.innerHTML = matchs.slice(0, 50).map(function(m) {
+    var badge = m.parfait ? '<span style="background:var(--vert);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700">⭐ PARFAIT</span>' : '<span style="background:#fff3e0;color:var(--orange);font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700">🎯 POTENTIEL</span>';
+    return '<div style="padding:10px;border:1px solid var(--gris2);border-radius:10px;margin-bottom:6px;font-size:11px;background:#fff">'
+      + '<div style="text-align:center;margin-bottom:6px">'+badge+'</div>'
+      + '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center">'
+      + '<div style="background:var(--vert3);padding:6px;border-radius:6px"><b>'+escH(m.a.nom)+'</b> ['+escH(m.a.grade)+']<br>📞 '+escH(m.a.tel)+'<br>📍 '+escH(m.a.reg)+'</div>'
+      + '<div style="font-size:16px;color:var(--orange)">⇄</div>'
+      + '<div style="background:#e3f2fd;padding:6px;border-radius:6px"><b>'+escH(m.b.nom)+'</b> ['+escH(m.b.grade)+']<br>📞 '+escH(m.b.tel)+'<br>📍 '+escH(m.b.reg)+'</div>'
+      + '</div></div>';
+  }).join('');
+}
+
+function adminRenderAlerts(users, annonces) {
+  var alerts = [];
+  var now = Date.now();
+  // 1. Fin période gratuite
+  var daysLeft = Math.ceil((FREE_END.getTime() - now) / (1000*60*60*24));
+  if (daysLeft > 0) alerts.push({ type:'info', icon:'⏰', msg:'Période gratuite : fin dans '+daysLeft+' jour(s) (28 avril 2026)' });
+  else alerts.push({ type:'ok', icon:'💰', msg:'Période payante active (300 FCFA par contact)' });
+
+  // 2. Users avec +3 annonces
+  var countByTel = {};
+  annonces.forEach(function(a){ countByTel[a.tel] = (countByTel[a.tel]||0)+1; });
+  Object.keys(countByTel).forEach(function(tel){
+    if (countByTel[tel] > 3) {
+      var u = users.find(function(x){ return x.tel === tel; });
+      alerts.push({ type:'warn', icon:'⚠️', msg:(u?u.nom:tel)+' a '+countByTel[tel]+' annonces (max = 3)' });
+    }
+  });
+
+  // 3. Téléphones dupliqués côté users
+  var telUsers = {};
+  users.forEach(function(u){ telUsers[u.tel] = (telUsers[u.tel]||0)+1; });
+  Object.keys(telUsers).forEach(function(tel){
+    if (telUsers[tel] > 1) alerts.push({ type:'danger', icon:'🚨', msg:'Numéro dupliqué ('+telUsers[tel]+' comptes) : '+tel });
+  });
+
+  // 4. Annonces vieilles de +7j
+  var d7 = 7*24*60*60*1000;
+  var oldAnn = annonces.filter(function(a){ return a.created_at && (now - new Date(a.created_at).getTime()) > d7; });
+  if (oldAnn.length) alerts.push({ type:'info', icon:'📉', msg:oldAnn.length+' annonce(s) publiée(s) il y a plus de 7 jours' });
+
+  // 5. Aucun utilisateur / annonce
+  if (!users.length) alerts.push({ type:'info', icon:'ℹ️', msg:'Aucun utilisateur inscrit pour le moment.' });
+  if (!annonces.length) alerts.push({ type:'info', icon:'ℹ️', msg:'Aucune annonce publiée pour le moment.' });
+
+  if (!alerts.length) alerts.push({ type:'ok', icon:'✅', msg:'Tout va bien, aucune alerte à signaler.' });
+
+  var colors = {
+    info: { bg:'#e3f2fd', border:'#1565c0', txt:'#0d47a1' },
+    warn: { bg:'#fff3e0', border:'#f57c00', txt:'#e65100' },
+    danger: { bg:'#ffebee', border:'#c62828', txt:'#b71c1c' },
+    ok: { bg:'#e8f5e9', border:'#2e7d32', txt:'#1b5e20' }
+  };
+  var el = document.getElementById('adm-alert-list');
+  if (!el) return;
+  el.innerHTML = alerts.map(function(a){
+    var c = colors[a.type] || colors.info;
+    return '<div style="background:'+c.bg+';border-left:4px solid '+c.border+';padding:10px;border-radius:8px;margin-bottom:6px;font-size:12px;color:'+c.txt+'">'
+      + '<span style="font-size:16px;margin-right:6px">'+a.icon+'</span>'+escH(a.msg)
+      + '</div>';
+  }).join('');
+}
+
+function adminExportCSV(type) {
+  var data, filename, headers, rows;
+  if (type === 'users') {
+    data = ADM_CACHE.users || [];
+    filename = 'fasopermut-users-'+new Date().toISOString().slice(0,10)+'.csv';
+    headers = ['nom','tel','grade','couleur','created_at'];
+  } else {
+    data = ADM_CACHE.annonces || [];
+    filename = 'fasopermut-annonces-'+new Date().toISOString().slice(0,10)+'.csv';
+    headers = ['id','nom','tel','grade','disc','reg','prov','etab','regs_dest','provs_dest','created_at'];
+  }
+  if (!data.length) { showToast('Aucune donnée à exporter'); return; }
+  rows = [headers.join(',')];
+  data.forEach(function(row){
+    rows.push(headers.map(function(h){
+      var v = row[h];
+      if (Array.isArray(v)) v = v.join('|');
+      if (v === null || v === undefined) v = '';
+      v = String(v).replace(/"/g,'""');
+      if (/[,"\n]/.test(v)) v = '"'+v+'"';
+      return v;
+    }).join(','));
+  });
+  var blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✅ Export CSV téléchargé');
 }
 
 async function adminBanUser(tel) {
   if (!confirm('Bannir et supprimer l\'utilisateur '+tel+' et toutes ses annonces ?')) return;
   var ok = await sbDeleteUser(tel);
   if (ok) {
-    // Retirer ses cartes du DOM
     document.querySelectorAll('.ann-card').forEach(function(c){
       if ((c.dataset.tel||'') === tel) c.remove();
     });
-    filterAnn();
+    if (typeof filterAnn === 'function') filterAnn();
     showToast('✅ Utilisateur banni et supprimé.');
     renderAdminPanel();
   } else {
@@ -2751,7 +3110,7 @@ async function adminDeleteAnnById(id) {
   var ok = await sbDeleteAnnonce(id);
   if (ok) {
     var card = document.querySelector('.ann-card[data-id="'+id+'"]');
-    if (card) { card.remove(); filterAnn(); }
+    if (card) { card.remove(); if (typeof filterAnn === 'function') filterAnn(); }
     showToast('✅ Annonce supprimée.');
     renderAdminPanel();
   } else {
@@ -2760,19 +3119,37 @@ async function adminDeleteAnnById(id) {
 }
 
 function adminDeleteAnn(btn) {
-  // Ancienne méthode DOM conservée par compatibilité - redirige vers la nouvelle
   var row = btn.closest('div[style*="display:flex"]');
   if (!row) return;
-  // Trouver l'id dans le bouton onclick
   var match = btn.getAttribute('onclick').match(/adminDeleteAnnById\((\d+)\)/);
   if (match) adminDeleteAnnById(parseInt(match[1]));
 }
 
-function adminTabSwitch(tab) {
-  document.querySelectorAll('.adm-tab-btn').forEach(function(b){ b.classList.remove('active'); });
+function adminTabSwitch(tab, ev) {
+  document.querySelectorAll('.adm-tab-btn').forEach(function(b){
+    b.classList.remove('active');
+    b.style.background = 'none';
+    b.style.color = 'var(--txt2)';
+    b.style.fontWeight = '600';
+    b.style.boxShadow = 'none';
+  });
   document.querySelectorAll('.adm-pane').forEach(function(p){ p.style.display='none'; });
-  event.target.classList.add('active');
-  document.getElementById('adm-pane-'+tab).style.display = 'block';
+  var target = ev && ev.target ? ev.target : null;
+  if (target) {
+    target.classList.add('active');
+    target.style.background = '#fff';
+    target.style.color = 'var(--bleu)';
+    target.style.fontWeight = '700';
+    target.style.boxShadow = '0 1px 4px rgba(0,0,0,.1)';
+  }
+  var pane = document.getElementById('adm-pane-'+tab);
+  if (pane) pane.style.display = 'block';
+  // Forcer resize des charts quand on ouvre la vue
+  if (tab === 'vue') {
+    setTimeout(function(){
+      Object.keys(ADM_CACHE.charts).forEach(function(k){ try { ADM_CACHE.charts[k].resize(); } catch(e){} });
+    }, 50);
+  }
 }
 
 </script>
