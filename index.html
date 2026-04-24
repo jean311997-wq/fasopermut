@@ -4,9 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>FasoPermut – Permutations des Enseignants BF</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://vbruosulizonagtzkrip.supabase.co" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<!-- Supabase JS servi localement depuis Vercel (evite blocage CDN chez certains FAI au Burkina) -->
+<script src="/supabase.min.js?v=2026042301"></script>
+<script>
+/* Fallback: si le bundle local n'a pas charge, on tente le CDN jsdelivr puis unpkg */
+(function(){
+  if (window.supabase && window.supabase.createClient) return;
+  var tried = 0;
+  var sources = [
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+    'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js'
+  ];
+  function loadNext(){
+    if (tried >= sources.length) { console.error('[FasoPermut] Impossible de charger Supabase JS'); return; }
+    var s = document.createElement('script');
+    s.src = sources[tried++];
+    s.async = false;
+    s.onerror = loadNext;
+    s.onload = function(){ console.log('[FasoPermut] Supabase charge via fallback', s.src); };
+    document.head.appendChild(s);
+  }
+  loadNext();
+})();
+</script>
 <style>
 :root{
   --vert:#1a7a4a;--vert2:#22a05e;--vert3:#e6f5ee;
@@ -1190,6 +1212,10 @@ footer b{color:#4fc878}
 </div>
 
 <script>
+// ===== VERSION =====
+window.APP_VERSION = 'v2026.04.24.1-local-sb';
+console.log('[FasoPermut] version', window.APP_VERSION);
+
 // ===== SUPABASE CONFIG =====
 var SUPABASE_URL = 'https://vbruosulizonagtzkrip.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_RQc9-Hict_-GM1SRV9hDAg_LOdhCEjk';
@@ -1229,20 +1255,38 @@ function getSb() {
 
 // ===== SUPABASE HELPERS =====
 async function sbGetUser(tel) {
-  var sb = await getSb(); if (!sb) return null;
+  var sb = await getSb();
+  if (!sb) { window._lastSbError = 'Connexion base de donnees impossible'; return null; }
   try {
-    var { data, error } = await sb.from('users').select('*').eq('tel', tel).single();
-    if (error) return null;
+    var { data, error } = await sb.from('users').select('*').eq('tel', tel).maybeSingle();
+    if (error) {
+      console.error('sbGetUser error:', error);
+      // N'ecrase pas une erreur critique deja positionnee par getSb
+      return null;
+    }
     return data;
-  } catch(e) { return null; }
+  } catch(e) {
+    console.error('sbGetUser exception:', e);
+    return null;
+  }
 }
 
 async function sbCreateUser(userData) {
-  var sb = await getSb(); if (!sb) return false;
+  var sb = await getSb();
+  if (!sb) { window._lastSbError = 'Connexion base de donnees impossible'; return false; }
   try {
     var { error } = await sb.from('users').insert([userData]);
-    return !error;
-  } catch(e) { return false; }
+    if (error) {
+      console.error('sbCreateUser error:', error);
+      window._lastSbError = (error.message || 'Erreur Supabase') + (error.code ? ' ['+error.code+']' : '');
+      return false;
+    }
+    return true;
+  } catch(e) {
+    console.error('sbCreateUser exception:', e);
+    window._lastSbError = (e && e.message) ? e.message : 'Exception reseau';
+    return false;
+  }
 }
 
 async function sbUpdateUser(tel, updates) {
@@ -1953,11 +1997,14 @@ document.querySelectorAll('.overlay').forEach(function(ov) {
 });
 
 // ===== TOAST =====
-function showToast(msg) {
+function showToast(msg, longer) {
   var t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 2800);
+  var d = longer ? 6500 : 2800;
+  // Toasts d'erreur plus longs pour que l'utilisateur puisse lire
+  if (!longer && typeof msg === 'string' && (msg.indexOf('❌') === 0 || msg.indexOf('⚠️') === 0)) d = 4500;
+  setTimeout(function(){ t.classList.remove('show'); }, d);
 }
 
 // ===== MOT DE PASSE OUBLIÉ =====
@@ -2065,28 +2112,74 @@ function checkLoginBeforePublish() {
   }
 }
 
+// Course contre un timeout : garantit qu'on ne reste pas bloque indefiniment
+function withTimeout(promise, ms, label) {
+  return new Promise(function(resolve){
+    var done = false;
+    var to = setTimeout(function(){
+      if (done) return;
+      done = true;
+      window._lastSbError = 'Timeout '+label+' ('+ms+'ms)';
+      resolve({ __timeout: true });
+    }, ms);
+    Promise.resolve(promise).then(function(v){
+      if (done) return;
+      done = true; clearTimeout(to); resolve(v);
+    }, function(e){
+      if (done) return;
+      done = true; clearTimeout(to);
+      window._lastSbError = (e && e.message) ? e.message : 'Erreur '+label;
+      resolve({ __timeout: true });
+    });
+  });
+}
+
+var _inscriptionEnCours = false;
 async function inscrireUser() {
-  var nom     = document.getElementById('reg-nom').value.trim();
-  var tel     = document.getElementById('reg-tel').value.trim();
+  // Empeche les doubles clics / soumissions concurrentes
+  if (_inscriptionEnCours) { showToast('⏳ Inscription déjà en cours, patientez...'); return; }
+
+  var nom     = (document.getElementById('reg-nom').value||'').trim();
+  // Normalise le telephone : supprime espaces, tirets, points
+  var tel     = (document.getElementById('reg-tel').value||'').replace(/[\s\-\.]/g,'').trim();
   var p1      = document.getElementById('pwd1').value;
   var p2      = document.getElementById('pwd2').value;
   var couleur = (document.getElementById('reg-couleur').value||'').trim().toLowerCase();
   var gradeInsc = (document.getElementById('reg-grade')||{value:''}).value;
 
   if (!nom || !tel)   { showToast('⚠️ Remplissez nom et téléphone'); return; }
+  if (!/^\d{8,}$/.test(tel)) { showToast('⚠️ Numéro invalide (8 chiffres min, sans espaces)'); return; }
   if (!p1)            { showToast('⚠️ Entrez un code secret'); return; }
   if (!couleur)       { showToast('⚠️ Entrez votre couleur préférée'); return; }
   if (p1 !== p2)      { showToast('❌ Les codes secrets ne correspondent pas'); return; }
 
+  _inscriptionEnCours = true;
+  // Desactive visuellement le bouton pour retour utilisateur
+  var btn = document.querySelector('#s-co button[onclick*="inscrireUser"]');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+  try {
   showToast('⏳ Inscription en cours...');
+  window._lastSbError = null;
 
-  // Vérifier si le numéro existe déjà
-  var existing = await sbGetUser(tel);
+  // Vérifier si le numéro existe déjà (timeout 10s pour ne pas bloquer)
+  var existing = await withTimeout(sbGetUser(tel), 10000, 'check user');
+  if (existing && existing.__timeout) {
+    showToast('❌ Réseau trop lent. Réessayez. ('+(window._lastSbError||'')+')');
+    return;
+  }
   if (existing) { showToast('⚠️ Ce numéro est déjà inscrit. Connectez-vous.'); return; }
 
   var userData = { nom: nom, tel: tel, pwd: p1, couleur: couleur, grade: gradeInsc };
-  var ok = await sbCreateUser(userData);
-  if (!ok) { showToast('❌ Erreur lors de l\'inscription. Réessayez.'); return; }
+  var ok = await withTimeout(sbCreateUser(userData), 15000, 'create user');
+  if (ok && ok.__timeout) {
+    showToast('❌ Réseau trop lent. Réessayez. ('+(window._lastSbError||'')+')');
+    return;
+  }
+  if (!ok) {
+    var detail = window._lastSbError ? ' ('+window._lastSbError+')' : '';
+    showToast('❌ Erreur inscription'+detail+'. Réessayez.');
+    return;
+  }
 
   isLoggedIn = true;
   currentUserData = userData;
@@ -2104,6 +2197,13 @@ async function inscrireUser() {
     var fGrade = document.getElementById('f-grade');
     if (fGrade && gradeInsc) { fGrade.value = gradeInsc; autoFillDisc(gradeInsc); }
   }, 800);
+  } catch(err) {
+    console.error('inscrireUser exception:', err);
+    showToast('❌ Erreur inattendue : '+(err && err.message ? err.message : err));
+  } finally {
+    _inscriptionEnCours = false;
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+  }
 }
 
 function deconnecterUser() {
@@ -2118,12 +2218,14 @@ function deconnecterUser() {
 }
 
 async function connecterUser() {
-  var tel = document.getElementById('co-tel').value.trim();
+  var tel = (document.getElementById('co-tel').value||'').replace(/[\s\-\.]/g,'').trim();
   var pwd = document.getElementById('co-pwd').value;
   if (!tel || !pwd) { showToast('⚠️ Remplissez téléphone et code secret'); return; }
 
   showToast('⏳ Connexion en cours...');
-  var user = await sbGetUser(tel);
+  window._lastSbError = null;
+  var user = await withTimeout(sbGetUser(tel), 10000, 'login');
+  if (user && user.__timeout) { showToast('❌ Réseau trop lent. Réessayez.'); return; }
   if(!user)          { showToast('❌ Numéro non trouvé. Inscrivez-vous.'); return; }
   if(user.pwd !== pwd) { showToast('❌ Code secret incorrect.'); return; }
 
