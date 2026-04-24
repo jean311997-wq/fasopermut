@@ -393,6 +393,16 @@ footer b{color:#4fc878}
 .push-notif-hdr{font-size:10px;font-weight:700;color:var(--vert2);margin-bottom:3px;display:flex;align-items:center;gap:5px}
 .push-notif-body{font-size:12px;color:var(--txt);line-height:1.4}
 .push-notif-link{font-size:11px;color:var(--vert2);font-weight:700;text-decoration:underline;cursor:pointer;margin-top:4px;display:block}
+/* Bouton WhatsApp flottant clignotant — chaîne FasoPermut */
+.fp-wa-float{position:fixed;right:14px;bottom:74px;width:58px;height:58px;border-radius:50%;background:#25d366;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.55);z-index:160;cursor:pointer;text-decoration:none;animation:fpWaPulse 1.6s ease-in-out infinite}
+.fp-wa-float svg{width:32px;height:32px;fill:#fff}
+.fp-wa-float::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:3px solid #25d366;opacity:.7;animation:fpWaRing 1.6s ease-out infinite}
+.fp-wa-float:hover{transform:scale(1.06)}
+.fp-wa-float-lbl{position:absolute;right:68px;top:50%;transform:translateY(-50%);background:#0f2347;color:#fff;font-size:11px;font-weight:800;padding:5px 9px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.25);pointer-events:none}
+.fp-wa-float-lbl::after{content:"";position:absolute;right:-5px;top:50%;transform:translateY(-50%);border:5px solid transparent;border-left-color:#0f2347}
+@keyframes fpWaPulse{0%,100%{transform:scale(1);box-shadow:0 6px 20px rgba(37,211,102,.55)}50%{transform:scale(1.08);box-shadow:0 8px 26px rgba(37,211,102,.85)}}
+@keyframes fpWaRing{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.45);opacity:0}}
+@media (max-width:380px){.fp-wa-float{width:52px;height:52px;bottom:68px}.fp-wa-float svg{width:28px;height:28px}.fp-wa-float-lbl{display:none}}
 /* Partage social */
 .share-ann-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
 .btn-share-ann{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;color:#fff}
@@ -434,7 +444,7 @@ footer b{color:#4fc878}
   <div class="hero-t"><em>Faso</em>Permut</div>
   <div class="hero-s">Trouve rapidement ta permutation entre collègues en 24H.</div>
   <div class="stats">
-    <div class="sbox"><div class="n" id="stat-annonces">+1240</div><div class="l">Annonces actives</div></div>
+    <div class="sbox"><div class="n" id="stat-annonces">+1300</div><div class="l">Annonces actives</div></div>
     <div class="sbox"><div class="n">17</div><div class="l">Régions</div></div>
     <div class="sbox"><div class="n">47</div><div class="l">Provinces</div></div>
   </div>
@@ -475,7 +485,6 @@ footer b{color:#4fc878}
 <div class="push-notif" id="push-notif">
   <div class="push-notif-hdr">🔔 FasoPermut</div>
   <div class="push-notif-body" id="push-notif-body"></div>
-  <span class="push-notif-link" id="push-notif-link" onclick="closePushNotif()">Voir son profil →</span>
 </div>
 
 <!-- ===== S2 PUBLICATION ===== -->
@@ -1233,7 +1242,7 @@ footer b{color:#4fc878}
 
 <script>
 // ===== VERSION =====
-window.APP_VERSION = 'v2026.04.24.2-pwa-notif';
+window.APP_VERSION = 'v2026.04.25.1-session-wa';
 console.log('[FasoPermut] version', window.APP_VERSION);
 
 // ===== PWA : Service Worker =====
@@ -1699,35 +1708,51 @@ var REGIONS_PROVINCES = {
 };
 
 // ===== COMPTEUR ANNONCES DEPUIS SUPABASE =====
+// Base discrète à 1300 + nombre réel d'annonces (s'incrémente avec les nouvelles publications)
+var STAT_BASE = 1300;
 async function updateStatAnnonces() {
   try {
     var sb = await getSb();
     if (!sb) return;
     var { count } = await sb.from('annonces').select('*', { count: 'exact', head: true });
     var el = document.getElementById('stat-annonces');
-    if (el && count !== null) el.textContent = String(count);
+    if (el && count !== null) el.textContent = '+' + (STAT_BASE + (count || 0));
   } catch(e) {}
 }
 // Appelé après chargement de Supabase (pas bloquant au démarrage)
 setTimeout(updateStatAnnonces, 100);
+// Rafraîchit toutes les 90 secondes pour refléter les nouvelles publications
+setInterval(updateStatAnnonces, 90000);
 
 
 // Les données users sont maintenant dans Supabase
-// On garde juste la session locale dans sessionStorage (pas sensible)
+// Session persistente : localStorage (reste connecté même après fermeture du navigateur)
+// Migration silencieuse depuis l'ancien sessionStorage
 function getCurrentUser() {
-  try { return JSON.parse(sessionStorage.getItem('fp_current')||'null'); } catch(e){return null;}
+  try {
+    var raw = localStorage.getItem('fp_current');
+    if (!raw) {
+      // migration : si l'utilisateur avait une session dans l'ancien sessionStorage, on la récupère
+      raw = sessionStorage.getItem('fp_current');
+      if (raw) {
+        try { localStorage.setItem('fp_current', raw); sessionStorage.removeItem('fp_current'); } catch(e){}
+      }
+    }
+    return JSON.parse(raw || 'null');
+  } catch(e){ return null; }
 }
 function saveCurrentUser(u) {
   try {
-    if(u) sessionStorage.setItem('fp_current', JSON.stringify(u));
-    else sessionStorage.removeItem('fp_current');
+    if(u) localStorage.setItem('fp_current', JSON.stringify(u));
+    else localStorage.removeItem('fp_current');
+    try { sessionStorage.removeItem('fp_current'); } catch(e){}
   } catch(e){}
 }
 
 var isLoggedIn = false;
 var currentUserData = null;
 
-// Init session
+// Init session — restaure aussi mesAnnonces au démarrage si déjà connecté
 (function(){
   var u = getCurrentUser();
   if(u){
@@ -1735,6 +1760,18 @@ var currentUserData = null;
     currentUserData = u;
     updateNavBtn();
     var ls = document.getElementById('logout-section'); if(ls) ls.style.display = 'none'; // géré par nav
+    // Recharge les annonces de l'utilisateur (sinon elles disparaissent au refresh)
+    setTimeout(function(){
+      try {
+        if (typeof sbGetMesAnnonces === 'function' && currentUserData && currentUserData.tel) {
+          sbGetMesAnnonces(currentUserData.tel).then(function(arr){
+            mesAnnonces = arr || [];
+            try { renderMesAnnonces(); } catch(e){}
+            try { renderMesAnnoncesCompte(); } catch(e){}
+          }).catch(function(){});
+        }
+      } catch(e){}
+    }, 400);
   }
 })();
 
@@ -3047,19 +3084,19 @@ function triggerPushNotif() {
   pushShown.push(notif.id);
   var el = document.getElementById('push-notif');
   var body = document.getElementById('push-notif-body');
-  var link = document.getElementById('push-notif-link');
   if (!el || !body) return;
-  body.textContent = notif.msg;
-  link.onclick = function() {
+  body.innerHTML = notif.msg + ' <span style="color:var(--vert2);font-weight:700;text-decoration:underline">Voir →</span>';
+  el.style.cursor = 'pointer';
+  el.onclick = function(e) {
+    if (e && e.target && e.target.classList && e.target.classList.contains('push-notif-close')) return;
     closePushNotif();
-    // Deep-link vers l'annonce précise
     if (notif.ann_id) {
       var url = new URL(window.location.href);
       url.searchParams.set('ann', notif.ann_id);
       window.history.pushState({}, '', url.pathname + url.search);
-      handleDeepLink();
+      try { handleDeepLink(); } catch(e2){}
     } else {
-      go(notif.action); nav(document.querySelectorAll('.bni')[1]);
+      try { go(notif.action); nav(document.querySelectorAll('.bni')[1]); } catch(e3){}
     }
   };
   el.classList.add('show');
@@ -4063,5 +4100,11 @@ function adminTabSwitch(tab, ev) {
 }
 
 </script>
+
+<!-- Bouton WhatsApp flottant clignotant : amène à la chaîne FasoPermut -->
+<a class="fp-wa-float" href="https://whatsapp.com/channel/0029VbCIoQPElagpxG9ZIn0H" target="_blank" rel="noopener" aria-label="Rejoindre la chaîne WhatsApp FasoPermut" title="Rejoindre la chaîne WhatsApp FasoPermut">
+  <span class="fp-wa-float-lbl">Rejoindre la chaîne</span>
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+</a>
 </body>
 </html>
