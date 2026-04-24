@@ -4,6 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>FasoPermut – Permutations des Enseignants BF</title>
+<meta name="description" content="FasoPermut - La 1ère plateforme burkinabè de permutation entre enseignants. Tous les corps (PCLC, PCCEG, PCE, PE, CPE, CE, ATE, EPE, ECPE, AISU), les 17 régions du Burkina. Gratuit. Matching automatique.">
+<meta name="theme-color" content="#22a05e">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<!-- Open Graph : previews professionnelles sur WhatsApp/Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://fasopermut.com/">
+<meta property="og:title" content="FasoPermut — Permutation enseignants Burkina Faso">
+<meta property="og:description" content="Trouve un collègue pour permuter. Matching automatique, 17 régions, 10 corps. Gratuit.">
+<meta property="og:image" content="https://fasopermut.com/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="FasoPermut">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FasoPermut — Permutation enseignants Burkina Faso">
+<meta name="twitter:description" content="Trouve un collègue pour permuter. Gratuit. 17 régions.">
+<meta name="twitter:image" content="https://fasopermut.com/icon-512.png">
 <link rel="preconnect" href="https://vbruosulizonagtzkrip.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <!-- Supabase JS servi localement depuis Vercel (evite blocage CDN chez certains FAI au Burkina) -->
@@ -1213,8 +1233,139 @@ footer b{color:#4fc878}
 
 <script>
 // ===== VERSION =====
-window.APP_VERSION = 'v2026.04.24.1-local-sb';
+window.APP_VERSION = 'v2026.04.24.2-pwa-notif';
 console.log('[FasoPermut] version', window.APP_VERSION);
+
+// ===== PWA : Service Worker =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').then(function(reg){
+      console.log('[PWA] SW actif', reg.scope);
+      window._swReg = reg;
+    }).catch(function(err){ console.warn('[PWA] SW erreur', err); });
+  });
+}
+
+// ===== NOTIFICATIONS : demande permission + envoi notif locale =====
+function canNotify() {
+  try { return ('Notification' in window) && Notification.permission === 'granted'; }
+  catch(e) { return false; }
+}
+
+async function askPushPermission() {
+  try {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') { markPushEnabled(true); return; }
+    if (Notification.permission === 'denied') return;
+    // Popup doux qui explique avant de déclencher la demande navigateur
+    if (localStorage.getItem('fp_push_asked') === '1') return;
+    localStorage.setItem('fp_push_asked', '1');
+    // Mini bannière d'opt-in
+    var el = document.createElement('div');
+    el.id = 'push-optin-banner';
+    el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);max-width:420px;width:92%;z-index:991;background:linear-gradient(135deg,#f57c00,#e65100);color:#fff;border-radius:14px;padding:14px;box-shadow:0 8px 24px rgba(245,124,0,.45);animation:fadeInUp .4s ease';
+    el.innerHTML = '<div style="display:flex;gap:10px;align-items:flex-start">'
+      + '<div style="font-size:28px">🔔</div>'
+      + '<div style="flex:1">'
+        + '<div style="font-size:14px;font-weight:800">Active les notifications FasoPermut</div>'
+        + '<div style="font-size:12px;opacity:.95;margin-top:3px">Sois averti <b>instantanément</b> quand un collègue correspond à ton profil — même site fermé.</div>'
+        + '<div style="display:flex;gap:8px;margin-top:10px">'
+          + '<button id="btn-push-yes" style="flex:1;background:#fff;color:#e65100;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:800;cursor:pointer">✅ Activer</button>'
+          + '<button id="btn-push-no" style="background:rgba(0,0,0,.25);color:#fff;border:none;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer">Plus tard</button>'
+        + '</div>'
+      + '</div>'
+    + '</div>';
+    document.body.appendChild(el);
+    document.getElementById('btn-push-yes').onclick = async function(){
+      el.remove();
+      try {
+        var perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          markPushEnabled(true);
+          showToast('🎉 Notifications activées !');
+          sendLocalNotif('🎯 FasoPermut', 'Parfait ! Tu recevras les nouveaux matchs ici.', '/');
+        }
+      } catch(e) {}
+    };
+    document.getElementById('btn-push-no').onclick = function(){ el.remove(); };
+  } catch(e) {}
+}
+
+async function markPushEnabled(v) {
+  try {
+    if (isLoggedIn && currentUserData) {
+      var sb = await getSb(); if (!sb) return;
+      sb.from('users').update({ push_enabled: !!v }).eq('tel', currentUserData.tel).then(function(){});
+    }
+  } catch(e) {}
+}
+
+// Notif locale (même site fermé via SW)
+function sendLocalNotif(title, body, url, tag) {
+  if (!canNotify()) return;
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'LOCAL_NOTIF', title: title, body: body, url: url, tag: tag || 'fp-match'
+      });
+    } else {
+      new Notification(title, { body: body, icon: '/icon-192.png', tag: tag || 'fp-match' });
+    }
+  } catch(e) {}
+}
+
+// Détecte en temps réel si une nouvelle annonce matche le profil et envoie la notif
+function checkLiveMatch(newAnn) {
+  try {
+    if (!newAnn || !isLoggedIn || !currentUserData) return;
+    if (!mesAnnonces || !mesAnnonces.length) return;
+
+    // Pour chacune de MES annonces, comparer avec la nouvelle
+    var matched = false;
+    var matchType = '';
+    mesAnnonces.forEach(function(mine){
+      if (matched) return;
+      var myRegs  = mine.regsDest || mine.regs_dest || [];
+      var myProvs = mine.provsDest || mine.provs_dest || [];
+      var myReg   = mine.reg || '';
+      var theirReg = (newAnn.reg || '').toLowerCase();
+      var theirProv = (newAnn.prov || '').toLowerCase();
+      var theirDest = (newAnn.regs_dest || []).join(' ').toLowerCase();
+      var theirGrade = (newAnn.grade || '').split('(')[0].trim();
+      var myGrade = (mine.grade || '').split('(')[0].trim();
+
+      // Leur poste actuel est dans MES destinations souhaitées
+      var iWantTheirPos = myRegs.some(function(r){ return theirReg.indexOf(r.toLowerCase())!==-1; })
+                       || myProvs.some(function(p){ return theirProv.indexOf(p.toLowerCase())!==-1; });
+      // Leur destination inclut ma zone actuelle
+      var theyWantMyPos = myReg && theirDest.indexOf(myReg.toLowerCase())!==-1;
+      var gradeOk = !theirGrade || !myGrade || theirGrade === myGrade;
+
+      if ((iWantTheirPos || theyWantMyPos) && gradeOk) {
+        matched = true;
+        matchType = (iWantTheirPos && theyWantMyPos) ? 'PARFAIT' : (iWantTheirPos ? 'destination' : 'retour');
+      }
+    });
+
+    if (matched) {
+      var emoji = matchType === 'PARFAIT' ? '🎯' : '🎯';
+      var title = emoji + ' Match ' + matchType + ' sur FasoPermut !';
+      var body = (newAnn.nom || 'Un collègue') + ' ('+ (newAnn.grade || '') +') cherche à permuter — clique pour voir';
+      var url  = '/?ann=' + encodeURIComponent(newAnn.id);
+      // Notification native
+      sendLocalNotif(title, body, url, 'fp-match-' + newAnn.id);
+      // Toast dans la page (si visible)
+      showToast('🎯 Match '+matchType+' : ' + (newAnn.nom || ''));
+      // Insérer dans table notifications (pour historique)
+      insertNotificationRow(currentUserData.tel, title + ' — ' + body);
+    }
+  } catch(e) { console.warn('checkLiveMatch:', e); }
+}
+
+async function insertNotificationRow(tel, msg) {
+  var sb = await getSb(); if (!sb) return;
+  try { sb.from('notifications').insert([{ tel_destinataire: tel, message: msg }]).then(function(){}); } catch(e) {}
+}
 
 // ===== SUPABASE CONFIG =====
 var SUPABASE_URL = 'https://vbruosulizonagtzkrip.supabase.co';
@@ -1331,6 +1482,109 @@ async function sbInsertAnnonce(ann) {
   } catch(e) { return null; }
 }
 
+// === ENGAGEMENT : vues, partages, notifications ===
+async function recordAnnView(annId) {
+  if (!annId) return;
+  var sb = await getSb(); if (!sb) return;
+  try {
+    var viewerTel = (isLoggedIn && currentUserData) ? currentUserData.tel : 'anonymous';
+    // Anti-spam : 1 seule vue par utilisateur par 10 min (localStorage léger)
+    var key = 'v_' + annId + '_' + viewerTel;
+    var last = parseInt(localStorage.getItem(key) || '0', 10);
+    if (Date.now() - last < 10*60*1000) return;
+    localStorage.setItem(key, String(Date.now()));
+    // Journal
+    sb.from('ann_views').insert([{ ann_id: annId, viewer_tel: viewerTel }]).then(function(){});
+    // Incrément atomique
+    sb.rpc('bump_ann_counter', { p_ann_id: parseInt(annId, 10), p_col: 'views' }).then(function(){});
+  } catch(e) {}
+}
+
+async function incrementShareCount(annId) {
+  if (!annId) return;
+  var sb = await getSb(); if (!sb) return;
+  try {
+    sb.rpc('bump_ann_counter', { p_ann_id: parseInt(annId, 10), p_col: 'shares' }).then(function(){});
+    // Mise à jour UI si compteur visible
+    var vS = document.getElementById('v-shares');
+    if (vS) vS.textContent = (parseInt(vS.textContent,10) || 0) + 1;
+  } catch(e) {}
+}
+
+async function loadAnnStats(annId) {
+  if (!annId) return;
+  var sb = await getSb(); if (!sb) return;
+  try {
+    var { data } = await sb.from('annonces').select('views_count,shares_count').eq('id', annId).maybeSingle();
+    if (!data) return;
+    var vV = document.getElementById('v-views');
+    var vS = document.getElementById('v-shares');
+    if (vV) vV.textContent = data.views_count || 0;
+    if (vS) vS.textContent = data.shares_count || 0;
+  } catch(e) {}
+}
+
+async function updateLastSeen() {
+  if (!isLoggedIn || !currentUserData) return;
+  var sb = await getSb(); if (!sb) return;
+  try { sb.from('users').update({ last_seen: new Date().toISOString() }).eq('tel', currentUserData.tel).then(function(){}); } catch(e) {}
+}
+
+async function getNewMatchesSinceLastVisit() {
+  if (!isLoggedIn || !currentUserData) return 0;
+  var sb = await getSb(); if (!sb) return 0;
+  try {
+    var { data: u } = await sb.from('users').select('last_seen').eq('tel', currentUserData.tel).maybeSingle();
+    var lastSeen = u && u.last_seen ? u.last_seen : null;
+    if (!lastSeen) return 0;
+    // Compter les annonces créées depuis, en excluant les siennes
+    var { data: anns } = await sb.from('annonces').select('id,reg,grade,regs_dest,tel,created_at').gt('created_at', lastSeen).neq('tel', currentUserData.tel);
+    if (!anns || !anns.length) return 0;
+    // Filtrer : garder seulement celles qui correspondent à l'une de MES zones souhaitées
+    var myAnns = await sb.from('annonces').select('regs_dest,reg').eq('tel', currentUserData.tel);
+    var myRegsDest = [];
+    var myRegs = [];
+    (myAnns.data || []).forEach(function(a){
+      (a.regs_dest || []).forEach(function(r){ if (myRegsDest.indexOf(r)===-1) myRegsDest.push(r); });
+      if (a.reg && myRegs.indexOf(a.reg)===-1) myRegs.push(a.reg);
+    });
+    var count = 0;
+    anns.forEach(function(a){
+      var theirReg = a.reg || '';
+      var theirDest = a.regs_dest || [];
+      var iWantWhereTheyAre = myRegsDest.some(function(r){ return theirReg && theirReg.indexOf(r)!==-1; });
+      var theyWantWhereIAm = theirDest.some(function(d){ return myRegs.some(function(m){ return d && m && (d.indexOf(m)!==-1 || m.indexOf(d)!==-1); }); });
+      if (iWantWhereTheyAre || theyWantWhereIAm) count++;
+    });
+    return count;
+  } catch(e) { return 0; }
+}
+
+async function renderWelcomeBackBanner() {
+  if (!isLoggedIn || !currentUserData) return;
+  var n = await getNewMatchesSinceLastVisit();
+  // Actualiser last_seen APRÈS avoir compté
+  updateLastSeen();
+  if (n <= 0) return;
+  var existing = document.getElementById('welcome-back-banner');
+  if (existing) existing.remove();
+  var ban = document.createElement('div');
+  ban.id = 'welcome-back-banner';
+  ban.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);max-width:420px;width:92%;z-index:990;background:linear-gradient(135deg,#e53935,#c62828);color:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 6px 22px rgba(229,57,53,.45);animation:fadeInUp .4s ease;display:flex;align-items:center;gap:10px;cursor:pointer';
+  ban.innerHTML = '<div style="font-size:26px">🔥</div>'
+    + '<div style="flex:1">'
+      + '<div style="font-size:13px;font-weight:800">'+n+' nouveau(x) enseignant(s) correspondent à ton profil</div>'
+      + '<div style="font-size:11px;opacity:.9">Depuis ta dernière visite — clique pour voir</div>'
+    + '</div>'
+    + '<button onclick="event.stopPropagation();this.parentNode.remove()" style="background:rgba(0,0,0,.2);color:#fff;border:none;width:26px;height:26px;border-radius:50%;font-size:15px;cursor:pointer">×</button>';
+  ban.addEventListener('click', function(){
+    go('s3'); var b = document.querySelectorAll('.bni')[1]; if (b) nav(b);
+    ban.remove();
+  });
+  document.body.appendChild(ban);
+  setTimeout(function(){ if (ban.parentNode) ban.remove(); }, 12000);
+}
+
 async function sbDeleteAnnonce(id) {
   var sb = await getSb(); if (!sb) return false;
   try {
@@ -1395,6 +1649,10 @@ async function setupRealtimeAnnonces() {
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'annonces' }, function(payload) {
       var a = payload.new;
       if (a && !(currentUserData && a.tel === currentUserData.tel)) {
+        // Normaliser pour addAnnToS3 (attend regsDest/provsDest/ts)
+        a.regsDest  = a.regs_dest  || [];
+        a.provsDest = a.provs_dest || [];
+        a.ts = a.created_at ? new Date(a.created_at).getTime() : Date.now();
         addAnnToS3(a);
         runMatchingEngine();
         var badge = document.getElementById('notif-badge');
@@ -1403,6 +1661,12 @@ async function setupRealtimeAnnonces() {
           badge.textContent = n;
           badge.style.display = 'flex';
         }
+        // NOUVEAU : Si l'annonce matche le profil de l'utilisateur connecté → notif NATIVE
+        try {
+          if (isLoggedIn && currentUserData && typeof checkLiveMatch === 'function') {
+            checkLiveMatch(a);
+          }
+        } catch(e) {}
       }
     })
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'annonces' }, function(payload) {
@@ -1441,7 +1705,7 @@ async function updateStatAnnonces() {
     if (!sb) return;
     var { count } = await sb.from('annonces').select('*', { count: 'exact', head: true });
     var el = document.getElementById('stat-annonces');
-    if (el && count !== null) el.textContent = '+' + (count + 1240);
+    if (el && count !== null) el.textContent = String(count);
   } catch(e) {}
 }
 // Appelé après chargement de Supabase (pas bloquant au démarrage)
@@ -1806,23 +2070,267 @@ async function publierAnnonce() {
   addAnnToS3(inserted);
   setTimeout(runSmartNotifications, 200);
 
-  // Popup félicitations
-  var felicDiv = document.createElement('div');
-  felicDiv.id = 'felic-overlay';
-  felicDiv.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:flex;align-items:center;justify-content:center;animation:fadeInUp .3s ease';
-  felicDiv.innerHTML = '<div style="background:#fff;border-radius:18px;padding:28px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">'
-    + '<div style="font-size:48px;margin-bottom:10px">🎉</div>'
-    + '<div style="font-size:20px;font-weight:800;color:var(--vert);margin-bottom:8px">Félicitations !</div>'
-    + '<div style="font-size:13px;color:var(--txt2);margin-bottom:18px">Votre annonce a été publiée et est visible par tous les enseignants ! Partagez-la pour maximiser vos chances !</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
-    + '<button onclick="shareToWhatsApp(\''+escH(nom)+'\',\''+escH(grade)+'\',\''+escH(disc)+'\',\''+escH(reg)+'\',\''+escH(prov)+'\')" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:9px;padding:11px;font-size:12px;font-weight:700;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>WhatsApp</button>'
-    + '<button onclick="shareToFacebook(\''+escH(nom)+'\',\''+escH(grade)+'\',\''+escH(disc)+'\',\''+escH(reg)+'\',\''+escH(prov)+'\')" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#1877f2;color:#fff;border:none;border-radius:9px;padding:11px;font-size:12px;font-weight:700;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>Facebook</button>'
-    + '</div>'
-    + '<a href="https://www.facebook.com/share/18MkcYr54Y/" target="_blank" onclick="document.getElementById(\'felic-overlay\').remove()" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#1877f2;color:#fff;padding:11px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>Rejoindre notre page Facebook</a>'
-    + '<button onclick="document.getElementById(\'felic-overlay\').remove()" style="background:none;border:1.5px solid var(--gris2);border-radius:10px;padding:10px;width:100%;font-size:13px;color:var(--txt2);cursor:pointer">Plus tard</button>'
+  // Écran pro post-publication (grand panneau récapitulatif)
+  showPostPublishPanel(inserted);
+}
+
+// ===== PANNEAU PRO APRES PUBLICATION =====
+function showPostPublishPanel(ann) {
+  var nom = ann.nom || '';
+  var grade = ann.grade || '';
+  var disc = ann.disc || '';
+  var reg = ann.reg || '';
+  var prov = ann.prov || '';
+  var etab = ann.etab || '';
+  var commune = ann.commune || '';
+  var regsDest = ann.regs_dest || ann.regsDest || [];
+  var provsDest = ann.provs_dest || ann.provsDest || [];
+  var id = ann.id || '';
+  var opts = { etab:etab, commune:commune, regsDest:regsDest, provsDest:provsDest, id:id };
+  // Stocker les options dans window pour les handlers onclick
+  window._lastPubOpts = { nom:nom, grade:grade, disc:disc, reg:reg, prov:prov, opts:opts };
+
+  var over = document.createElement('div');
+  over.id = 'post-pub-overlay';
+  over.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 12px';
+
+  var destStr = regsDest.length ? regsDest.join(' · ') : '(toutes régions)';
+
+  over.innerHTML =
+    '<div style="background:#fff;border-radius:18px;max-width:460px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.4);overflow:hidden;margin:auto">'
+      // HEADER félicitations
+      + '<div style="background:linear-gradient(135deg,#1a7a4a,#22a05e);color:#fff;padding:22px 18px;text-align:center">'
+        + '<div style="font-size:44px;line-height:1">🎉</div>'
+        + '<div style="font-size:20px;font-weight:800;margin-top:6px">Annonce publiée avec succès !</div>'
+        + '<div style="font-size:12px;opacity:.95;margin-top:4px">Partage-la sur tes réseaux pour <b>maximiser</b> tes chances</div>'
+      + '</div>'
+
+      // APERCU VISUEL DE L'ANNONCE (carte stylisée prête à screenshot)
+      + '<div id="ann-card-preview" style="margin:14px;border:2px solid #22a05e;border-radius:14px;padding:14px;background:linear-gradient(135deg,#f0f9f4,#fff);position:relative">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
+          + '<div>'
+            + '<div style="font-size:16px;font-weight:800;color:#1a2f5a">👤 '+escH(nom)+'</div>'
+            + '<div style="font-size:12px;color:#1a7a4a;font-weight:700;margin-top:2px">🎓 '+escH(grade)+' · '+escH(disc)+'</div>'
+          + '</div>'
+          + '<div style="background:#22a05e;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap">🚨 PERMUTATION</div>'
+        + '</div>'
+        + '<div style="background:#fff;border-radius:10px;padding:10px;margin-top:8px;border-left:3px solid #f57c00">'
+          + '<div style="font-size:10px;color:#888;font-weight:700;letter-spacing:.5px">📍 POSTE ACTUEL</div>'
+          + (etab ? '<div style="font-size:12px;color:#333;margin-top:2px">🏫 '+escH(etab)+'</div>' : '')
+          + (commune ? '<div style="font-size:12px;color:#333">🏘️ '+escH(commune)+'</div>' : '')
+          + '<div style="font-size:12px;color:#333">📌 '+escH(prov)+' · '+escH(reg)+'</div>'
+        + '</div>'
+        + '<div style="background:#fff;border-radius:10px;padding:10px;margin-top:6px;border-left:3px solid #22a05e">'
+          + '<div style="font-size:10px;color:#888;font-weight:700;letter-spacing:.5px">🎯 DESTINATION SOUHAITÉE</div>'
+          + '<div style="font-size:13px;color:#1a7a4a;font-weight:700;margin-top:2px">🌍 '+escH(destStr)+'</div>'
+          + (provsDest.length ? '<div style="font-size:11px;color:#555;margin-top:2px">📍 Provinces : '+escH(provsDest.slice(0,4).join(', '))+(provsDest.length>4?' +'+(provsDest.length-4)+' autres':'')+'</div>' : '')
+        + '</div>'
+        + '<div style="text-align:center;margin-top:10px;padding-top:8px;border-top:1px dashed #22a05e">'
+          + '<div style="font-size:11px;color:#1a2f5a;font-weight:700">🌍 FasoPermut · fasopermut.com</div>'
+          + '<div style="font-size:10px;color:#666;margin-top:2px">La plateforme de permutation des enseignants du Burkina</div>'
+        + '</div>'
+      + '</div>'
+
+      // COMPTEUR LIVE
+      + '<div id="share-counter" style="margin:0 14px 12px 14px;background:#fff8e1;border:1px dashed #f57c00;border-radius:10px;padding:10px;text-align:center">'
+        + '<div style="font-size:11px;color:#7a5c00">👀 Cette annonce a été vue <b id="v-views">0</b> fois · partagée <b id="v-shares">0</b> fois</div>'
+        + '<div style="font-size:10px;color:#7a5c00;margin-top:3px;font-style:italic">Chaque partage augmente tes chances de trouver un collègue !</div>'
+      + '</div>'
+
+      // BOUTONS PARTAGE (4 en grille)
+      + '<div style="padding:0 14px;margin-bottom:12px">'
+        + '<div style="font-size:11px;font-weight:700;color:#1a2f5a;margin-bottom:8px;text-align:center;letter-spacing:.5px">📤 PARTAGER MAINTENANT</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+          + '<button onclick="pubShare(\'wa\')" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:10px;padding:12px 6px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 2px 6px rgba(37,211,102,.3)">💬 WhatsApp</button>'
+          + '<button onclick="pubShare(\'fb\')" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#1877f2;color:#fff;border:none;border-radius:10px;padding:12px 6px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 2px 6px rgba(24,119,242,.3)">📘 Facebook</button>'
+          + '<button onclick="pubShare(\'tg\')" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#0088cc;color:#fff;border:none;border-radius:10px;padding:12px 6px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 2px 6px rgba(0,136,204,.3)">✈️ Telegram</button>'
+          + '<button onclick="pubShare(\'copy\')" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#555;color:#fff;border:none;border-radius:10px;padding:12px 6px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.2)">📋 Copier texte</button>'
+        + '</div>'
+        + '<button onclick="downloadAnnImage()" style="width:100%;background:linear-gradient(135deg,#f57c00,#e65100);color:#fff;border:none;border-radius:10px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 2px 6px rgba(245,124,0,.3);margin-bottom:8px">🖼️ Télécharger l\'image (à partager dans les groupes)</button>'
+      + '</div>'
+
+      // CANAUX OFFICIELS
+      + '<div style="padding:0 14px;margin-bottom:12px">'
+        + '<div style="font-size:11px;font-weight:700;color:#1a2f5a;margin-bottom:8px;text-align:center;letter-spacing:.5px">📢 REJOINS NOS CANAUX OFFICIELS</div>'
+        + '<a href="'+FASOPERMUT_WA_CHANNEL+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;padding:11px;border-radius:10px;font-size:12px;font-weight:800;text-decoration:none;margin-bottom:6px">💬 Canal WhatsApp FasoPermut</a>'
+        + '<a href="'+FASOPERMUT_FB_PAGE+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#1877f2;color:#fff;padding:11px;border-radius:10px;font-size:12px;font-weight:800;text-decoration:none">📘 Page Facebook FasoPermut</a>'
+      + '</div>'
+
+      // FERMER
+      + '<div style="padding:0 14px 16px 14px">'
+        + '<button onclick="closePostPubPanel()" style="width:100%;background:none;border:1.5px solid #ddd;border-radius:10px;padding:10px;font-size:12px;color:#888;cursor:pointer">Fermer (je partagerai plus tard)</button>'
+      + '</div>'
     + '</div>';
-  document.body.appendChild(felicDiv);
-  felicDiv.addEventListener('click', function(e){ if(e.target===felicDiv) felicDiv.remove(); });
+
+  document.body.appendChild(over);
+  over.addEventListener('click', function(e){ if(e.target===over) closePostPubPanel(); });
+
+  // Charger les stats de partage si disponibles
+  if (id && typeof loadAnnStats === 'function') { loadAnnStats(id); }
+}
+
+function closePostPubPanel() {
+  var el = document.getElementById('post-pub-overlay');
+  if (el) el.remove();
+}
+
+// Wrapper pour les boutons de partage du panneau post-publication
+function pubShare(kind) {
+  var p = window._lastPubOpts;
+  if (!p) return;
+  if (kind === 'wa')   shareToWhatsApp(p.nom, p.grade, p.disc, p.reg, p.prov, p.opts);
+  else if (kind === 'fb')   shareToFacebook(p.nom, p.grade, p.disc, p.reg, p.prov, p.opts);
+  else if (kind === 'tg')   shareToTelegram(p.nom, p.grade, p.disc, p.reg, p.prov, p.opts);
+  else if (kind === 'copy') copyShareText(p.nom, p.grade, p.disc, p.reg, p.prov, p.opts);
+  // Incrémenter compteur de partages
+  if (p.opts && p.opts.id && typeof incrementShareCount === 'function') {
+    incrementShareCount(p.opts.id);
+  }
+}
+
+// Génère et télécharge l'image PNG de l'annonce
+function downloadAnnImage() {
+  var p = window._lastPubOpts;
+  if (!p) return;
+  var W = 1080, H = 1350;
+  var canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+
+  // Fond dégradé bleu
+  var grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#0f2347');
+  grad.addColorStop(1, '#2d4373');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Bande drapeau haut
+  ctx.fillStyle = '#ef2b2d'; ctx.fillRect(0, 0, W, 12);
+  ctx.fillStyle = '#009739'; ctx.fillRect(0, 12, W, 12);
+
+  // Badge blanc logo
+  ctx.fillStyle = '#fff';
+  roundRect(ctx, W/2 - 200, 60, 400, 100, 18); ctx.fill();
+  ctx.fillStyle = '#1a2f5a';
+  ctx.font = 'bold 48px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('FasoPermut', W/2, 120);
+  ctx.fillStyle = '#1a7a4a';
+  ctx.font = '18px Arial, sans-serif';
+  ctx.fillText('Burkina Faso · Enseignants', W/2, 148);
+
+  // Titre PERMUTATION
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 72px Arial, sans-serif';
+  ctx.fillText('🚨 PERMUTATION', W/2, 240);
+  ctx.fillStyle = '#22a05e';
+  ctx.font = 'bold 48px Arial, sans-serif';
+  ctx.fillText('RECHERCHÉE', W/2, 300);
+
+  // Nom + grade
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 44px Arial, sans-serif';
+  ctx.fillText('👤 ' + p.nom, W/2, 400);
+  ctx.fillStyle = '#f5c542';
+  ctx.font = 'bold 32px Arial, sans-serif';
+  ctx.fillText(p.grade + ' · ' + p.disc, W/2, 450);
+
+  // Encadré POSTE ACTUEL
+  ctx.fillStyle = 'rgba(255,255,255,.10)';
+  roundRect(ctx, 60, 510, W - 120, 200, 16); ctx.fill();
+  ctx.strokeStyle = '#f57c00'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(60, 510); ctx.lineTo(60, 710); ctx.stroke();
+  ctx.fillStyle = '#f57c00';
+  ctx.font = 'bold 22px Arial, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('📍 POSTE ACTUEL', 90, 545);
+  ctx.fillStyle = '#fff';
+  ctx.font = '26px Arial, sans-serif';
+  var y = 580;
+  if (p.opts.etab) { ctx.fillText('🏫 ' + truncate(p.opts.etab, 42), 90, y); y += 36; }
+  if (p.opts.commune) { ctx.fillText('🏘️ Commune : ' + truncate(p.opts.commune, 35), 90, y); y += 36; }
+  ctx.fillText('📌 Province : ' + truncate(p.prov, 35), 90, y); y += 36;
+  ctx.fillText('🗺️ Région : ' + truncate(p.reg, 35), 90, y);
+
+  // Encadré DESTINATION
+  ctx.fillStyle = 'rgba(34,160,94,.15)';
+  roundRect(ctx, 60, 740, W - 120, 180, 16); ctx.fill();
+  ctx.strokeStyle = '#22a05e'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(60, 740); ctx.lineTo(60, 920); ctx.stroke();
+  ctx.fillStyle = '#22a05e';
+  ctx.font = 'bold 22px Arial, sans-serif';
+  ctx.fillText('🎯 DESTINATION SOUHAITÉE', 90, 775);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 28px Arial, sans-serif';
+  var dests = (p.opts.regsDest && p.opts.regsDest.length) ? p.opts.regsDest.join(' · ') : '(toutes régions)';
+  wrapText(ctx, '🌍 ' + dests, 90, 810, W - 180, 36);
+  if (p.opts.provsDest && p.opts.provsDest.length) {
+    ctx.font = '22px Arial, sans-serif';
+    ctx.fillStyle = '#b8e0c8';
+    wrapText(ctx, '📍 ' + p.opts.provsDest.slice(0, 5).join(', '), 90, 880, W - 180, 30);
+  }
+
+  // CTA bas
+  ctx.fillStyle = '#22a05e';
+  roundRect(ctx, 60, 970, W - 120, 90, 45); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 36px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('➡️ www.fasopermut.com', W/2, 1025);
+
+  // Mention canal WhatsApp
+  ctx.fillStyle = '#25d366';
+  ctx.font = 'bold 24px Arial, sans-serif';
+  ctx.fillText('💬 Canal WhatsApp officiel FasoPermut', W/2, 1100);
+  ctx.fillStyle = '#b8c4d9';
+  ctx.font = '20px Arial, sans-serif';
+  ctx.fillText('Rejoins-nous pour ne rater aucun match', W/2, 1135);
+
+  // Slogan bas
+  ctx.fillStyle = '#f5c542';
+  ctx.font = 'italic 22px Arial, sans-serif';
+  ctx.fillText('Facilitons ensemble nos permutations', W/2, 1195);
+
+  // Stats bas
+  ctx.fillStyle = '#b8c4d9';
+  ctx.font = '18px Arial, sans-serif';
+  ctx.fillText('✅ Gratuit · 🔎 Matching auto · 🗺️ 17 régions', W/2, 1240);
+
+  // Bande drapeau bas
+  ctx.fillStyle = '#009739'; ctx.fillRect(0, H - 24, W, 12);
+  ctx.fillStyle = '#ef2b2d'; ctx.fillRect(0, H - 12, W, 12);
+
+  // Télécharger
+  var link = document.createElement('a');
+  link.download = 'FasoPermut-' + (p.nom || 'annonce').replace(/\s+/g, '_') + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast('✅ Image téléchargée — partage-la dans les groupes !');
+  if (p.opts && p.opts.id && typeof incrementShareCount === 'function') {
+    incrementShareCount(p.opts.id);
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+}
+function truncate(s, n) { return (s && s.length > n) ? s.slice(0, n-1) + '…' : (s || ''); }
+function wrapText(ctx, text, x, y, maxW, lh) {
+  var words = String(text).split(' ');
+  var line = '';
+  for (var i = 0; i < words.length; i++) {
+    var test = line + words[i] + ' ';
+    if (ctx.measureText(test).width > maxW && i > 0) {
+      ctx.fillText(line, x, y); line = words[i] + ' '; y += lh;
+    } else { line = test; }
+  }
+  ctx.fillText(line, x, y);
 }
 
 function renderMesAnnoncesCompte() {
@@ -1912,11 +2420,34 @@ function addAnnToS3(a) {
   } else {
     html += '<div style="background:var(--vert3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--vert);margin-top:8px">✅ Contact visible gratuitement (période de gratuité)</div>';
   }
+  // Ligne engagement (vues + bouton partager)
+  var views = a.views_count || 0;
+  var shares = a.shares_count || 0;
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(0,0,0,.08);font-size:11px">'
+    + '<div style="color:var(--txt2)">👀 <b>'+views+'</b> vues · 📤 <b>'+shares+'</b> partages</div>'
+    + '<button onclick="shareCardFromData(this,\''+escH(String(a.id))+'\')" style="background:#25d366;color:#fff;border:none;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">📤 Partager</button>'
+    + '</div>';
   html += '</div></div>';
 
   container.insertAdjacentHTML('afterbegin', html);
   filterAnn();
   updateDebloquerButtons();
+}
+
+// Partager depuis une carte d'annonce (liste)
+async function shareCardFromData(btn, annId) {
+  var sb = await getSb(); if (!sb) { showToast('⚠️ Connexion impossible'); return; }
+  try {
+    var { data } = await sb.from('annonces').select('*').eq('id', annId).maybeSingle();
+    if (!data) { showToast('⚠️ Annonce introuvable'); return; }
+    window._lastPubOpts = {
+      nom: data.nom, grade: data.grade, disc: data.disc, reg: data.reg, prov: data.prov,
+      opts: { etab: data.etab, commune: data.commune, regsDest: data.regs_dest || [], provsDest: data.provs_dest || [], id: data.id }
+    };
+    // Ouvrir WhatsApp direct (raccourci le plus utilisé)
+    shareToWhatsApp(data.nom, data.grade, data.disc, data.reg, data.prov, window._lastPubOpts.opts);
+    incrementShareCount(data.id);
+  } catch(e) { showToast('⚠️ Erreur'); }
 }
 
 function escH(s) {
@@ -2407,75 +2938,58 @@ function payError(errorMsg) {
 }
 
 // ===== TICKER DERNIÈRES ANNONCES =====
-var ANNONCES_TICKER = [
-  {nom:"ZONGO Moussa",    grade:"PCLC",  disc:"Français/HG",   de:"Djibo (Liptako)",          vers:"Kadiogo"},
-  {nom:"OUEDRAOGO Salif", grade:"PCLC",  disc:"Maths",         de:"Ouahigouya (Yaadga)",      vers:"Houet"},
-  {nom:"KANTAGBA E.",     grade:"PCE",   disc:"SVT",            de:"Zabré (Nazinon)",         vers:"Houet / Kadiogo"},
-  {nom:"KABORE Adjara",   grade:"PCCEG", disc:"Français/HG",   de:"Bogandé (Goulmou)",          vers:"Kadiogo"},
-  {nom:"SOME Raïssa",     grade:"PCCEG", disc:"EPS",            de:"Kaya (Kuilsé)",         vers:"Sud-Ouest"},
-  {nom:"TRAORE Hamidou",  grade:"PCE",   disc:"Anglais",        de:"Dori (Liptako)",           vers:"Boulkiemdé"},
-  {nom:"DIALLO Awa",      grade:"PE",    disc:"Français",       de:"Gorom-Gorom (Liptako)",    vers:"Kadiogo"},
-  {nom:"SAWADOGO R.",     grade:"PCLC",  disc:"PC",             de:"Titao (Yaadga)",           vers:"Houet"},
-  {nom:"ILBOUDO Marie",   grade:"PCCEG", disc:"Maths/SVT",     de:"Fada (Goulmou)",             vers:"Centre"},
-  {nom:"BARRO Issa",      grade:"PCE",   disc:"Philo",          de:"Gaoua (Djôrô)",       vers:"Kadiogo"},
-];
-
-function buildTicker() {
+// Ticker alimenté par VRAIES annonces Supabase
+async function buildTicker() {
   var inner = document.getElementById('ticker-inner');
-  // Items annonces
-  var annItems = ANNONCES_TICKER.map(function(a) {
-    return '<div class="ann-tick-item">'
-      + '<span class="tag">'+a.disc+'</span>'
-      + '<span>'+a.nom+' <b style="color:#8ab0cc">['+a.grade+']</b></span>'
-      + '<span class="loc">📍 '+a.de+'</span>'
-      + '<span class="arr">→</span>'
-      + '<span style="color:#4fc878;font-weight:600">'+a.vers+'</span>'
-      + '</div>';
-  });
-  // Items déblocages
-  var mins = [2,5,8,12,17,23,31,42,55,68,3,7,14,19,27];
-  var debloqItems = DEBLOQ_NAMES.map(function(n, i) {
-    return '<div class="ann-tick-item" style="color:#ffd580">'
-      + '<span style="background:rgba(245,124,0,.3);color:#ffd54f;font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px">🔓 Contact</span>'
-      + '<span><b>'+n+'</b></span>'
-      + '<span style="color:rgba(255,255,160,.7);font-size:10px">a débloqué un contact il y a '+mins[i % mins.length]+' min</span>'
-      + '</div>';
-  });
-  // Mélanger aléatoirement
-  var combined = [];
-  var ai = 0, di = 0;
-  while (ai < annItems.length || di < debloqItems.length) {
-    if (di >= debloqItems.length || (ai < annItems.length && Math.random() > 0.35)) {
-      combined.push(annItems[ai++]);
-    } else {
-      combined.push(debloqItems[di++]);
+  if (!inner) return;
+  inner.innerHTML = '<div class="ann-tick-item" style="color:#8ab0cc;font-style:italic">⏳ Chargement des dernières annonces...</div>';
+  var sb = await getSb(); if (!sb) { inner.innerHTML = ''; return; }
+  try {
+    var { data } = await sb.from('annonces').select('nom,grade,disc,reg,prov,regs_dest,created_at').order('created_at', { ascending: false }).limit(20);
+    if (!data || !data.length) {
+      inner.innerHTML = '<div class="ann-tick-item" style="color:#8ab0cc;font-style:italic">🆕 Sois le premier à publier une annonce !</div>';
+      return;
     }
-  }
-  var all = combined.concat(combined);
-  inner.innerHTML = all.join('');
+    var items = data.map(function(a){
+      var gradeShort = (a.grade||'').split('(')[0].trim();
+      var regDest = (a.regs_dest && a.regs_dest.length) ? a.regs_dest.slice(0,2).join(' / ') : 'Flexible';
+      return '<div class="ann-tick-item">'
+        + '<span class="tag">'+escH(a.disc||'—')+'</span>'
+        + '<span>'+escH(a.nom||'')+' <b style="color:#8ab0cc">['+escH(gradeShort)+']</b></span>'
+        + '<span class="loc">📍 '+escH(a.reg||'')+'</span>'
+        + '<span class="arr">→</span>'
+        + '<span style="color:#4fc878;font-weight:600">'+escH(regDest)+'</span>'
+        + '</div>';
+    });
+    // Doubler pour boucler proprement
+    inner.innerHTML = items.concat(items).join('');
+  } catch(e) { inner.innerHTML = ''; }
 }
 
-// ===== TICKER DÉBLOCAGES ACCUEIL =====
-var DEBLOQ_NAMES = [
-  'ZONGO Moussa','KABORE Adjara','OUEDRAOGO Salif','KANTAGBA E.','SOME Raïssa',
-  'TRAORE Hamidou','DIALLO Awa','SAWADOGO R.','ILBOUDO Marie','BARRO Issa',
-  'SIMPORE Adama','YAMEOGO Cécile','COULIBALY N.','NIKIEMA Pascal','TAPSOBA H.'
-];
-function buildDebloqTicker() {
+// ===== TICKER ACTIVITÉ ACCUEIL (vraies inscriptions récentes) =====
+async function buildDebloqTicker() {
   var inner = document.getElementById('debloq-inner');
   if (!inner) return;
-  var items = [];
-  var mins = [2,5,8,12,17,23,31,42,55,68];
-  DEBLOQ_NAMES.forEach(function(n, i) {
-    items.push({ nom: n, mins: mins[i % mins.length] });
-  });
-  var all = items.concat(items);
-  inner.innerHTML = all.map(function(d) {
-    return '<div class="debloq-item">'
-      + '🔓 <b style="color:#fff">'+d.nom+'</b>'
-      + '<span style="color:rgba(255,255,160,.7);font-size:10px"> a débloqué un contact il y a '+d.mins+' min</span>'
-      + '</div>';
-  }).join('');
+  var sb = await getSb(); if (!sb) { inner.innerHTML = ''; return; }
+  try {
+    var { data } = await sb.from('users').select('nom,grade,created_at').order('created_at', { ascending: false }).limit(15);
+    if (!data || !data.length) { inner.innerHTML = ''; return; }
+    function ago(ts) {
+      var s = Math.floor((Date.now() - new Date(ts).getTime())/1000);
+      if (s < 60) return 'à l\'instant';
+      if (s < 3600) return 'il y a '+Math.floor(s/60)+' min';
+      if (s < 86400) return 'il y a '+Math.floor(s/3600)+' h';
+      return 'il y a '+Math.floor(s/86400)+' j';
+    }
+    var items = data.map(function(u){
+      return '<div class="debloq-item">'
+        + '✨ <b style="color:#fff">'+escH(u.nom||'')+'</b>'
+        + (u.grade ? '<span style="color:#b8e0c8;font-size:10px;margin-left:4px">['+escH(u.grade)+']</span>' : '')
+        + '<span style="color:rgba(255,255,160,.7);font-size:10px"> a rejoint FasoPermut '+ago(u.created_at)+'</span>'
+        + '</div>';
+    });
+    inner.innerHTML = items.concat(items).join('');
+  } catch(e) { inner.innerHTML = ''; }
 }
 
 // ===== BARRE DE PROGRESSION FORMULAIRE =====
@@ -2502,28 +3016,52 @@ function goFormStep(n) {
   window.scrollTo(0, 0);
 }
 
-// ===== PUSH NOTIFICATIONS IN-APP =====
-var PUSH_NOTIFS = [
-  { msg: 'ZONGO Moussa [PCLC · Maths] vient de consulter les annonces.', action: 's3' },
-  { msg: 'KABORE Adjara [PCCEG · Français/HG] a vu votre type de profil.', action: 's3' },
-  { msg: 'OUEDRAOGO Salif [PCLC · Maths] cherche à permuter vers Houet — correspond à votre zone !', action: 's3' },
-  { msg: 'SOME Raïssa [PCCEG · EPS] vient de publier une annonce vers Kadiogo.', action: 's3' },
-  { msg: 'DIALLO Awa [PE · Français] a mis à jour son annonce il y a 5 minutes.', action: 's3' },
-];
+// ===== PUSH NOTIFICATIONS IN-APP (VRAIES données Supabase) =====
 var pushShown = [];
+var pushRealCache = [];
+async function refreshPushCache() {
+  var sb = await getSb(); if (!sb) return;
+  try {
+    var { data } = await sb.from('annonces').select('id,nom,grade,disc,reg,prov,regs_dest,created_at').order('created_at', { ascending: false }).limit(25);
+    if (!data) return;
+    // Exclure ses propres annonces
+    var myTel = (isLoggedIn && currentUserData) ? currentUserData.tel : null;
+    pushRealCache = data.filter(function(a){ return a.nom && (!myTel || a.tel !== myTel); }).map(function(a){
+      var gradeShort = (a.grade||'').split('(')[0].trim();
+      var regDest = (a.regs_dest && a.regs_dest.length) ? a.regs_dest.slice(0,1).join(' / ') : '';
+      var msg;
+      if (regDest) {
+        msg = a.nom + ' ['+gradeShort+' · '+(a.disc||'')+'] cherche à permuter vers ' + regDest + ' (depuis ' + (a.reg||'') + ')';
+      } else {
+        msg = a.nom + ' ['+gradeShort+' · '+(a.disc||'')+'] vient de publier une annonce depuis ' + (a.reg||'');
+      }
+      return { id: a.id, msg: msg, action: 's3', ann_id: a.id };
+    });
+  } catch(e) {}
+}
 function triggerPushNotif() {
-  var remaining = PUSH_NOTIFS.filter(function(_, i){ return pushShown.indexOf(i) === -1; });
-  if (!remaining.length) return;
-  var idx = Math.floor(Math.random() * remaining.length);
-  var real = PUSH_NOTIFS.indexOf(remaining[idx]);
-  pushShown.push(real);
-  var notif = PUSH_NOTIFS[real];
+  if (!pushRealCache || !pushRealCache.length) { refreshPushCache(); return; }
+  var remaining = pushRealCache.filter(function(n){ return pushShown.indexOf(n.id) === -1; });
+  if (!remaining.length) { pushShown = []; remaining = pushRealCache; }
+  var notif = remaining[Math.floor(Math.random() * remaining.length)];
+  pushShown.push(notif.id);
   var el = document.getElementById('push-notif');
   var body = document.getElementById('push-notif-body');
   var link = document.getElementById('push-notif-link');
   if (!el || !body) return;
   body.textContent = notif.msg;
-  link.onclick = function() { closePushNotif(); go(notif.action); nav(document.querySelectorAll('.bni')[1]); };
+  link.onclick = function() {
+    closePushNotif();
+    // Deep-link vers l'annonce précise
+    if (notif.ann_id) {
+      var url = new URL(window.location.href);
+      url.searchParams.set('ann', notif.ann_id);
+      window.history.pushState({}, '', url.pathname + url.search);
+      handleDeepLink();
+    } else {
+      go(notif.action); nav(document.querySelectorAll('.bni')[1]);
+    }
+  };
   el.classList.add('show');
   setTimeout(function(){ el.classList.remove('show'); }, 5000);
 }
@@ -2541,20 +3079,102 @@ function schedulePushNotifs() {
 }
 
 // ===== PARTAGE ANNONCE APRÈS PUBLICATION =====
-function shareAnnonce(nom, grade, disc, reg, prov) {
-  var txt = '📣 Je cherche une permutation !\n'
-    + '👤 ' + nom + ' [' + grade + ' · ' + disc + ']\n'
-    + '📍 Poste actuel : ' + reg + ' | ' + prov + '\n'
-    + '🔍 Trouvez-moi sur FasoPermut → https://fasopermut.com\n'
-    + '#FasoPermut #Permutation #Burkina';
-  return txt;
+// Liens officiels FasoPermut
+var FASOPERMUT_WA_CHANNEL = 'https://whatsapp.com/channel/0029VbCIoQPElagpxG9ZIn0H';
+var FASOPERMUT_FB_PAGE    = 'https://www.facebook.com/share/1E9M6PYfes/';
+var FASOPERMUT_SITE       = 'https://fasopermut.com';
+
+// Construit l'URL profonde (deep-link) vers une annonce précise
+function annDeepLink(annId) {
+  if (annId === undefined || annId === null || annId === '') return FASOPERMUT_SITE;
+  return FASOPERMUT_SITE + '/?ann=' + encodeURIComponent(annId);
 }
-function shareToWhatsApp(nom, grade, disc, reg, prov) {
-  var txt = shareAnnonce(nom, grade, disc, reg, prov);
+
+// Formate joliment une liste de destinations
+function fmtDestList(arr) {
+  if (!arr || !arr.length) return '(toutes régions)';
+  if (arr.length === 1) return arr[0];
+  if (arr.length <= 3) return arr.join(', ');
+  return arr.slice(0, 3).join(', ') + ' +' + (arr.length - 3) + ' autres';
+}
+
+// Construit le texte de partage ENRICHI (toutes les infos clés)
+function shareAnnonce(nom, grade, disc, reg, prov, opts) {
+  opts = opts || {};
+  var etab      = opts.etab || '';
+  var commune   = opts.commune || '';
+  var regsDest  = opts.regsDest || [];
+  var provsDest = opts.provsDest || [];
+  var annId     = (opts.id !== undefined) ? opts.id : '';
+  var dateStr   = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+
+  var lines = [];
+  lines.push('🚨 *PERMUTATION RECHERCHÉE — FASOPERMUT*');
+  lines.push('');
+  lines.push('👤 *' + nom + '*');
+  lines.push('🎓 ' + grade + ' · ' + disc);
+  lines.push('');
+  lines.push('📍 *POSTE ACTUEL* :');
+  if (etab)    lines.push('   🏫 ' + etab);
+  if (commune) lines.push('   🏘️ Commune : ' + commune);
+  lines.push('   📌 Province : ' + prov);
+  lines.push('   🗺️ Région : ' + reg);
+  lines.push('');
+  lines.push('🎯 *DESTINATION SOUHAITÉE* :');
+  lines.push('   🌍 Région(s) : ' + fmtDestList(regsDest));
+  if (provsDest && provsDest.length) {
+    lines.push('   📍 Province(s) : ' + fmtDestList(provsDest));
+  }
+  lines.push('');
+  lines.push('📅 Annonce publiée le ' + dateStr);
+  lines.push('');
+  lines.push('➡️ *VOIR CETTE ANNONCE ET ME CONTACTER* :');
+  lines.push(annDeepLink(annId));
+  lines.push('');
+  lines.push('📢 *Rejoins le canal WhatsApp officiel* :');
+  lines.push(FASOPERMUT_WA_CHANNEL);
+  lines.push('');
+  lines.push('━━━━━━━━━━━━━━━━━━━');
+  lines.push('🌍 *FASOPERMUT* — 1ère plateforme burkinabè');
+  lines.push('de permutation entre enseignants');
+  lines.push('✅ Gratuit · 🔎 Matching auto · 🗺️ 17 régions');
+  lines.push('');
+  lines.push('#FasoPermut #Permutation #Burkina #MENAPLN #Enseignants');
+  return lines.join('\n');
+}
+
+function shareToWhatsApp(nom, grade, disc, reg, prov, opts) {
+  var txt = shareAnnonce(nom, grade, disc, reg, prov, opts);
   window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
 }
-function shareToFacebook(nom, grade, disc, reg, prov) {
-  window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent('https://fasopermut.com') + '&quote=' + encodeURIComponent(shareAnnonce(nom, grade, disc, reg, prov)), '_blank');
+function shareToFacebook(nom, grade, disc, reg, prov, opts) {
+  opts = opts || {};
+  var url = annDeepLink(opts.id || '');
+  var txt = shareAnnonce(nom, grade, disc, reg, prov, opts);
+  window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url) + '&quote=' + encodeURIComponent(txt), '_blank');
+}
+function shareToTelegram(nom, grade, disc, reg, prov, opts) {
+  opts = opts || {};
+  var url = annDeepLink(opts.id || '');
+  var txt = shareAnnonce(nom, grade, disc, reg, prov, opts);
+  window.open('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(txt), '_blank');
+}
+function copyShareText(nom, grade, disc, reg, prov, opts) {
+  var txt = shareAnnonce(nom, grade, disc, reg, prov, opts);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(function(){
+      showToast('✅ Texte copié — colle-le où tu veux !');
+    }).catch(function(){ fpFallbackCopy(txt); });
+  } else { fpFallbackCopy(txt); }
+}
+function fpFallbackCopy(txt) {
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position='fixed'; ta.style.top='-1000px';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('✅ Texte copié !');
+  } catch(e) { showToast('⚠️ Copie impossible — sélectionne le texte manuellement'); }
 }
 
 // ===== INIT PRINCIPALE =====
@@ -2595,9 +3215,153 @@ async function initApp() {
 
   // Activer le temps réel
   setupRealtimeAnnonces();
+
+  // Alimenter cache push avec vraies annonces, puis rafraîchir toutes les 3 min
+  try { refreshPushCache(); setInterval(refreshPushCache, 180000); } catch(e) {}
+
+  // NOUVEAU : Traiter deep-link ?ann=ID (mur d'inscription + annonce en vedette)
+  try { handleDeepLink(); } catch(e) { console.warn('deeplink:', e); }
+
+  // NOUVEAU : Bannière matchs depuis dernière visite
+  try { setTimeout(renderWelcomeBackBanner, 1500); } catch(e) {}
+
+  // NOUVEAU : Demander permission push (après 8s d'activité, quand l'utilisateur est engagé)
+  try { setTimeout(askPushPermission, 8000); } catch(e) {}
 }
 
 initApp();
+
+// ===== DEEP-LINK ?ann=ID : AFFICHER UNE ANNONCE EN VEDETTE + MUR =====
+function getQueryParam(name) {
+  try {
+    var m = window.location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
+    return m ? decodeURIComponent(m[1]) : '';
+  } catch(e) { return ''; }
+}
+
+async function handleDeepLink() {
+  var annId = getQueryParam('ann');
+  if (!annId) return;
+
+  var sb = await getSb();
+  if (!sb) return;
+  try {
+    var { data, error } = await sb.from('annonces').select('*').eq('id', annId).maybeSingle();
+    if (error || !data) return;
+    // Incrémenter le compteur de vues (enregistrement passif — Étape 4)
+    if (typeof recordAnnView === 'function') { recordAnnView(annId); }
+    // Afficher l'overlay d'annonce en vedette
+    showFeaturedAnnonce(data);
+  } catch(e) { console.warn('deeplink load:', e); }
+}
+
+function showFeaturedAnnonce(ann) {
+  var nom = ann.nom || '';
+  var grade = ann.grade || '';
+  var disc = ann.disc || '';
+  var reg = ann.reg || '';
+  var prov = ann.prov || '';
+  var etab = ann.etab || '';
+  var commune = ann.commune || '';
+  var regsDest = ann.regs_dest || [];
+  var provsDest = ann.provs_dest || [];
+
+  var destStr = regsDest.length ? regsDest.join(' · ') : '(toutes régions)';
+  var isMine = isLoggedIn && currentUserData && ann.tel === currentUserData.tel;
+  var showContact = isLoggedIn; // connecté => contact visible ; sinon flouté
+
+  var over = document.createElement('div');
+  over.id = 'featured-ann-overlay';
+  over.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9998;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 12px;animation:fadeInUp .3s ease';
+
+  var contactHtml;
+  if (isMine) {
+    contactHtml = '<div style="background:#fff8e1;border:1px dashed #f57c00;border-radius:10px;padding:10px;text-align:center;font-size:12px;color:#7a5c00">💡 C\'est ta propre annonce ! Elle est bien en ligne.</div>';
+  } else if (showContact) {
+    contactHtml = '<div style="background:#e8f5e9;border:1px solid #22a05e;border-radius:10px;padding:12px;text-align:center">'
+      + '<div style="font-size:10px;color:#1a7a4a;font-weight:700;letter-spacing:.5px">📞 CONTACT</div>'
+      + '<div style="font-size:20px;font-weight:800;color:#1a2f5a;margin-top:4px">'+escH(ann.tel)+'</div>'
+      + '<a href="https://wa.me/226'+String(ann.tel).replace(/\D/g,'')+'" target="_blank" style="display:inline-block;margin-top:8px;background:#25d366;color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">💬 Contacter sur WhatsApp</a>'
+      + '</div>';
+  } else {
+    contactHtml = '<div style="position:relative;background:#fff;border:2px solid #f57c00;border-radius:12px;padding:14px;text-align:center">'
+      + '<div style="filter:blur(6px);pointer-events:none">'
+        + '<div style="font-size:10px;color:#7a5c00;font-weight:700">📞 CONTACT</div>'
+        + '<div style="font-size:20px;font-weight:800;color:#1a2f5a">XX XX XX XX</div>'
+      + '</div>'
+      + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(255,248,225,.92);border-radius:10px">'
+        + '<div style="font-size:24px">🔒</div>'
+        + '<div style="font-size:13px;font-weight:800;color:#7a5c00;margin-top:4px;text-align:center;padding:0 10px">Inscris-toi (30 secondes)<br>pour contacter <b>'+escH(nom)+'</b></div>'
+        + '<button onclick="closeFeaturedAnn();goToSignup()" style="margin-top:10px;background:linear-gradient(135deg,#1a7a4a,#22a05e);color:#fff;border:none;border-radius:10px;padding:11px 22px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(34,160,94,.4)">✅ M\'inscrire gratuitement</button>'
+        + '<div style="font-size:10px;color:#7a5c00;margin-top:6px;font-style:italic">C\'est gratuit · Aucune carte bancaire</div>'
+      + '</div>'
+    + '</div>';
+  }
+
+  over.innerHTML =
+    '<div style="background:#fff;border-radius:18px;max-width:460px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.5);overflow:hidden;margin:auto">'
+      + '<div style="background:linear-gradient(135deg,#1a7a4a,#22a05e);color:#fff;padding:18px 16px;text-align:center;position:relative">'
+        + '<button onclick="closeFeaturedAnn()" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.25);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer">×</button>'
+        + '<div style="font-size:36px">🎯</div>'
+        + '<div style="font-size:17px;font-weight:800;margin-top:4px">Annonce de permutation</div>'
+        + '<div style="font-size:11px;opacity:.95;margin-top:2px">Tu es arrivé ici depuis un lien partagé</div>'
+      + '</div>'
+      + '<div style="margin:14px;border:2px solid #22a05e;border-radius:14px;padding:14px;background:linear-gradient(135deg,#f0f9f4,#fff)">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
+          + '<div>'
+            + '<div style="font-size:17px;font-weight:800;color:#1a2f5a">👤 '+escH(nom)+'</div>'
+            + '<div style="font-size:12px;color:#1a7a4a;font-weight:700;margin-top:2px">🎓 '+escH(grade)+' · '+escH(disc)+'</div>'
+          + '</div>'
+          + '<div style="background:#22a05e;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap">🚨 PERMUTATION</div>'
+        + '</div>'
+        + '<div style="background:#fff;border-radius:10px;padding:10px;margin-top:8px;border-left:3px solid #f57c00">'
+          + '<div style="font-size:10px;color:#888;font-weight:700;letter-spacing:.5px">📍 POSTE ACTUEL</div>'
+          + (etab ? '<div style="font-size:12px;color:#333;margin-top:2px">🏫 '+escH(etab)+'</div>' : '')
+          + (commune ? '<div style="font-size:12px;color:#333">🏘️ '+escH(commune)+'</div>' : '')
+          + '<div style="font-size:12px;color:#333">📌 '+escH(prov)+' · '+escH(reg)+'</div>'
+        + '</div>'
+        + '<div style="background:#fff;border-radius:10px;padding:10px;margin-top:6px;border-left:3px solid #22a05e">'
+          + '<div style="font-size:10px;color:#888;font-weight:700;letter-spacing:.5px">🎯 DESTINATION SOUHAITÉE</div>'
+          + '<div style="font-size:13px;color:#1a7a4a;font-weight:700;margin-top:2px">🌍 '+escH(destStr)+'</div>'
+          + (provsDest.length ? '<div style="font-size:11px;color:#555;margin-top:2px">📍 '+escH(provsDest.slice(0,4).join(', '))+'</div>' : '')
+        + '</div>'
+        + '<div style="margin-top:10px">' + contactHtml + '</div>'
+      + '</div>'
+      + '<div style="padding:0 14px 16px 14px">'
+        + '<button onclick="closeFeaturedAnn()" style="width:100%;background:none;border:1.5px solid #ddd;border-radius:10px;padding:10px;font-size:12px;color:#888;cursor:pointer">Fermer et explorer le site</button>'
+      + '</div>'
+    + '</div>';
+
+  document.body.appendChild(over);
+  over.addEventListener('click', function(e){ if(e.target===over) closeFeaturedAnn(); });
+}
+
+function closeFeaturedAnn() {
+  var el = document.getElementById('featured-ann-overlay');
+  if (el) el.remove();
+  // Nettoyer l'URL (enlever ?ann=)
+  try {
+    var u = new URL(window.location.href);
+    u.searchParams.delete('ann');
+    window.history.replaceState({}, '', u.pathname + (u.search ? u.search : ''));
+  } catch(e) {}
+}
+
+function goToSignup() {
+  go('s-co');
+  var nav1 = document.querySelectorAll('.bni')[0];
+  if (nav1) nav(nav1);
+  // Forcer onglet "S'inscrire"
+  setTimeout(function(){
+    var tabs = document.querySelectorAll('#s-co .tab');
+    if (tabs.length > 1) {
+      tabs.forEach(function(t){ t.classList.remove('active'); });
+      tabs[1].classList.add('active');
+    }
+    var tc = document.getElementById('tc'); if (tc) tc.style.display = 'none';
+    var ti = document.getElementById('ti'); if (ti) ti.style.display = 'block';
+  }, 150);
+}
 
 
 // ===== AUTO-REMPLISSAGE DISCIPLINE SELON GRADE =====

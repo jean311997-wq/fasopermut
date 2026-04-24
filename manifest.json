@@ -1,0 +1,43 @@
+{
+  "name": "FasoPermut — Permutation enseignants Burkina Faso",
+  "short_name": "FasoPermut",
+  "description": "Plateforme officielle de permutation entre enseignants du Burkina Faso. Tous les corps, toutes les 17 régions.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f2347",
+  "theme_color": "#22a05e",
+  "lang": "fr",
+  "categories": ["education", "social", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Publier une annonce",
+      "short_name": "Publier",
+      "description": "Publie ton annonce de permutation",
+      "url": "/?screen=s2",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Voir les annonces",
+      "short_name": "Annonces",
+      "description": "Consulte les annonces en cours",
+      "url": "/?screen=s3",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

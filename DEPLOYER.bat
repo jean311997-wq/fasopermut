@@ -41,7 +41,7 @@ git status --short
 
 echo.
 echo [4/7] Ajout des fichiers modifies...
-git add index.html vercel.json supabase.min.js DEPLOYER.bat
+git add index.html vercel.json supabase.min.js DEPLOYER.bat sw.js manifest.json icon-192.png icon-512.png
 if errorlevel 1 (
     echo     ERREUR a l'ajout. Arret.
     pause
@@ -51,7 +51,7 @@ echo     OK.
 
 echo.
 echo [5/7] Creation du commit...
-git commit -m "Fix inscription: Supabase JS local + fallback CDN + no-cache"
+git commit -m "Partage enrichi + deep-link + PWA + notif push + compteur vues + fakes remplaces par vraies donnees"
 if errorlevel 1 (
     echo     Aucun changement a commiter ou erreur. On continue quand meme.
 )
