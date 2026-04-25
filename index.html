@@ -104,6 +104,10 @@ nav{background:var(--bleu);display:flex;align-items:center;justify-content:space
 .ann-match-score{display:inline-block;background:linear-gradient(135deg,#1976d2,#0d47a1);color:#fff;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:800;margin-left:6px;box-shadow:0 2px 5px rgba(25,118,210,.4)}
 .ann-match-score.high{background:linear-gradient(135deg,#22a05e,#1a8a50)}
 @keyframes fpBadgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+/* Animation à l'entrée des cartes annonces lors du scroll */
+.ann-card{opacity:0;transform:translateY(18px);transition:opacity .55s ease, transform .55s cubic-bezier(.2,.7,.2,1)}
+.ann-card.fp-in-view{opacity:1;transform:translateY(0)}
+.ann-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08)}
 /* Confettis container */
 #fp-confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden}
 .fp-confetti{position:absolute;width:10px;height:10px;animation:fpConfFall 2.2s ease-in forwards}
@@ -1027,10 +1031,10 @@ footer b{color:#4fc878}
   <!-- Déconnexion : gérée par le bouton dans la nav principale -->
   <div id="logout-section" style="display:none"></div>
 
-  <!-- CARTE GAMIFICATION : niveau + streak + parrainage (visible quand connecté) -->
-  <div class="co-card" id="gami-card" style="display:none">
-    <h3 style="margin-bottom:10px">🏆 Mon profil FasoPermut</h3>
-    <div id="gami-content"></div>
+  <!-- DÉFI DE PARTAGE : 10 groupes = 1 mois premium gratuit -->
+  <div class="co-card" id="share-challenge-card" style="display:none">
+    <h3 style="margin-bottom:10px">Défi partage</h3>
+    <div id="share-challenge-content"></div>
   </div>
 
   <!-- MES ANNONCES (visible quand connecté) -->
@@ -1313,7 +1317,7 @@ footer b{color:#4fc878}
 
 <script>
 // ===== VERSION =====
-window.APP_VERSION = 'v2026.04.25.3-permutation';
+window.APP_VERSION = 'v2026.04.25.4-pro-clean';
 console.log('[FasoPermut] version', window.APP_VERSION);
 
 // ===== PWA : Service Worker =====
@@ -1447,6 +1451,16 @@ function checkLiveMatch(newAnn) {
     });
 
     if (matched) {
+      // Queue WhatsApp pour l'utilisateur connecté (s'il a une alerte active)
+      try {
+        if (currentUserData && currentUserData.tel) {
+          var waMsg = 'Permutation ' + matchType + ' détectée sur FasoPermut\n'
+            + (newAnn.nom ? newAnn.nom + ' (' + (newAnn.grade||'') + ')\n' : '')
+            + (newAnn.reg ? 'Poste : ' + newAnn.reg + ' — ' + (newAnn.prov||'') + '\n' : '')
+            + (newAnn.regs_dest && newAnn.regs_dest.length ? 'Cherche : ' + newAnn.regs_dest.join(', ') : '');
+          queueWaForUser(currentUserData.tel, waMsg, newAnn.id);
+        }
+      } catch(e) {}
       var emoji = '';
       var title = 'Permutation ' + matchType + ' sur FasoPermut';
       var body = (newAnn.nom || 'Un collègue') + ' ('+ (newAnn.grade || '') +') cherche à permuter — clique pour voir';
@@ -1688,9 +1702,7 @@ async function renderWelcomeBackBanner() {
     gradient = 'linear-gradient(135deg,#1976d2,#0d47a1)';
     emoji = '👀';
   }
-  // Mention streak si dispo
-  var streak = currentUserData.streak_days || 0;
-  if (streak >= 2) subText += ' · 🔥 ' + streak + ' jours consécutifs';
+  // (Mention de streak retirée — gamification désactivée)
   var existing = document.getElementById('welcome-back-banner');
   if (existing) existing.remove();
   var ban = document.createElement('div');
@@ -2223,10 +2235,9 @@ async function publierAnnonce() {
   addAnnToS3(inserted);
   setTimeout(runSmartNotifications, 200);
 
-  // ====== ADDICTION : confettis + matching WhatsApp + points + Pour toi rerender ======
+  // ====== Confettis publication + matching WhatsApp + Pour toi rerender ======
   try { launchConfetti(180); } catch(e) {}
   try { triggerWaMatching(inserted); } catch(e) {}
-  try { addPoints(15, 'publish'); } catch(e) {}
   try { setTimeout(renderPourToi, 500); } catch(e) {}
 
   // Écran pro post-publication (grand panneau récapitulatif)
@@ -2507,7 +2518,21 @@ function renderMesAnnoncesCompte() {
     if(!destStr) destStr = 'Non précisée';
     var waNum = a.tel2 || '';
     var waLink = waNum ? '<a href="https://wa.me/226'+waNum.replace(/\s/g,'')+'" target="_blank" style="color:#25d366;font-weight:700;text-decoration:none">WA: '+waNum+'</a>' : '';
-    return '<div style="background:#fff;border:1.5px solid var(--gris2);border-radius:12px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">'      +'<div style="background:var(--vert3);padding:8px 12px;display:flex;align-items:center;justify-content:space-between">'      +'<div><div style="font-weight:700;color:var(--bleu);font-size:13px">👤 '+escH(a.nom)+'</div>'      +'<span style="background:var(--bleu);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">'+escH(gradeShort)+'</span></div>'      +'<button class="btn-del" onclick="supprimerAnn('+a.id+')">🗑 Supprimer</button></div>'      +'<div style="padding:10px 12px;font-size:12px">'      +'<div style="margin-bottom:5px"><b style="color:var(--bleu);font-size:11px">Discipline</b><br><span style="font-weight:700;font-size:13px">'+escH(a.disc)+'</span></div>'      +'<div style="margin-bottom:5px"><b style="color:var(--bleu);font-size:11px">Poste actuel</b><br><span style="color:var(--txt2)">'+escH(a.reg)+' | '+escH(a.prov)+(a.etab?' | '+escH(a.etab):'')+'</span></div>'      +'<div style="background:#fff8e1;border-left:3px solid var(--orange);border-radius:0 6px 6px 0;padding:6px 10px;margin-bottom:5px"><b style="color:var(--orange);font-size:11px">Destination souhaitée</b><br><span style="font-weight:600;color:#5a3c00;font-size:12px">'+escH(destStr)+'</span></div>'      +'<div style="color:var(--txt2)">Tel: '+escH(a.tel)+(waLink?' · '+waLink:'')+'</div>'      +'</div></div>';
+    return '<div style="background:#fff;border:1.5px solid var(--gris2);border-radius:12px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">'
+      +'<div style="background:var(--vert3);padding:8px 12px;display:flex;align-items:center;justify-content:space-between">'
+      +'<div><div style="font-weight:700;color:var(--bleu);font-size:13px">'+escH(a.nom)+'</div>'
+      +'<span style="background:var(--bleu);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">'+escH(gradeShort)+'</span></div>'
+      +'<button class="btn-del" onclick="supprimerAnn('+a.id+')">Supprimer</button></div>'
+      +'<div style="padding:10px 12px;font-size:12px">'
+      +'<div style="margin-bottom:5px"><b style="color:var(--bleu);font-size:11px">Discipline</b><br><span style="font-weight:700;font-size:13px">'+escH(a.disc)+'</span></div>'
+      +'<div style="margin-bottom:5px"><b style="color:var(--bleu);font-size:11px">Poste actuel</b><br><span style="color:var(--txt2)">'+escH(a.reg)+' | '+escH(a.prov)+(a.etab?' | '+escH(a.etab):'')+'</span></div>'
+      +'<div style="background:#fff8e1;border-left:3px solid var(--orange);border-radius:0 6px 6px 0;padding:6px 10px;margin-bottom:5px"><b style="color:var(--orange);font-size:11px">Destination souhaitée</b><br><span style="font-weight:600;color:#5a3c00;font-size:12px">'+escH(destStr)+'</span></div>'
+      +'<div style="color:var(--txt2);margin-bottom:8px">Tel: '+escH(a.tel)+(waLink?' · '+waLink:'')+'</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;border-top:1px dashed var(--gris2);padding-top:8px">'
+        +'<button onclick="shareCardFromData(this,\''+escH(String(a.id))+'\')" style="flex:1;min-width:100px;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border:none;border-radius:7px;padding:9px;font-size:11px;font-weight:800;cursor:pointer">Partager mon annonce</button>'
+        +'<button onclick="downloadAnnImageById(\''+escH(String(a.id))+'\')" style="background:#fff;color:var(--bleu);border:1.5px solid var(--bleu);border-radius:7px;padding:9px 12px;font-size:11px;font-weight:700;cursor:pointer">Télécharger image</button>'
+      +'</div>'
+      +'</div></div>';
   }).join('');
 }
 
@@ -2523,7 +2548,20 @@ function renderMesAnnonces() {
         if(a.regsDest && a.regsDest.length) destStr += a.regsDest.join(', ');
         if(a.provsDest && a.provsDest.length) destStr += (destStr?' | ':'')+a.provsDest.join(', ');
         if(!destStr) destStr = 'Non précisée';
-        return '<div style="background:#fff;border:1.5px solid var(--gris2);border-radius:12px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">'          +'<div style="background:var(--vert3);padding:8px 12px;display:flex;align-items:center;justify-content:space-between">'          +'<div><div style="font-weight:700;color:var(--bleu);font-size:13px">👤 '+escH(a.nom)+'</div>'          +'<span style="background:var(--bleu);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">'+escH(gradeShort)+'</span></div>'          +'<button class="btn-del" onclick="supprimerAnn('+a.id+')">🗑 Supprimer</button></div>'          +'<div style="padding:10px 12px;font-size:12px">'          +'<div style="margin-bottom:5px"><b style="color:var(--bleu);font-size:11px">Discipline</b><br><span style="font-weight:700;font-size:13px">'+escH(a.disc)+'</span></div>'          +'<div style="margin-bottom:5px"><b style="color:var(--bleu);font-size:11px">Poste actuel</b><br><span style="color:var(--txt2)">'+escH(a.reg)+' | '+escH(a.prov)+(a.etab?' | '+escH(a.etab):'')+'</span></div>'          +'<div style="background:#fff8e1;border-left:3px solid var(--orange);border-radius:0 6px 6px 0;padding:6px 10px;margin-bottom:5px"><b style="color:var(--orange);font-size:11px">Destination souhaitée</b><br><span style="font-weight:600;color:#5a3c00;font-size:12px">'+escH(destStr)+'</span></div>'          +'</div></div>';
+        return '<div style="background:#fff;border:1.5px solid var(--gris2);border-radius:12px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">'
+          +'<div style="background:var(--vert3);padding:8px 12px;display:flex;align-items:center;justify-content:space-between">'
+          +'<div><div style="font-weight:700;color:var(--bleu);font-size:13px">'+escH(a.nom)+'</div>'
+          +'<span style="background:var(--bleu);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">'+escH(gradeShort)+'</span></div>'
+          +'<button class="btn-del" onclick="supprimerAnn('+a.id+')">Supprimer</button></div>'
+          +'<div style="padding:10px 12px;font-size:12px">'
+          +'<div style="margin-bottom:5px"><b style="color:var(--bleu);font-size:11px">Discipline</b><br><span style="font-weight:700;font-size:13px">'+escH(a.disc)+'</span></div>'
+          +'<div style="margin-bottom:5px"><b style="color:var(--bleu);font-size:11px">Poste actuel</b><br><span style="color:var(--txt2)">'+escH(a.reg)+' | '+escH(a.prov)+(a.etab?' | '+escH(a.etab):'')+'</span></div>'
+          +'<div style="background:#fff8e1;border-left:3px solid var(--orange);border-radius:0 6px 6px 0;padding:6px 10px;margin-bottom:5px"><b style="color:var(--orange);font-size:11px">Destination souhaitée</b><br><span style="font-weight:600;color:#5a3c00;font-size:12px">'+escH(destStr)+'</span></div>'
+          +'<div style="display:flex;gap:6px;flex-wrap:wrap;border-top:1px dashed var(--gris2);padding-top:8px;margin-top:6px">'
+            +'<button onclick="shareCardFromData(this,\''+escH(String(a.id))+'\')" style="flex:1;min-width:100px;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border:none;border-radius:7px;padding:9px;font-size:11px;font-weight:800;cursor:pointer">Partager mon annonce</button>'
+            +'<button onclick="downloadAnnImageById(\''+escH(String(a.id))+'\')" style="background:#fff;color:var(--bleu);border:1.5px solid var(--bleu);border-radius:7px;padding:9px 12px;font-size:11px;font-weight:700;cursor:pointer">Image</button>'
+          +'</div>'
+          +'</div></div>';
       }).join('');
     }
   }
@@ -2612,18 +2650,32 @@ function addAnnToS3(a) {
 
 // Partager depuis une carte d'annonce (liste)
 async function shareCardFromData(btn, annId) {
-  var sb = await getSb(); if (!sb) { showToast('⚠️ Connexion impossible'); return; }
+  var sb = await getSb(); if (!sb) { showToast('Connexion impossible'); return; }
   try {
     var { data } = await sb.from('annonces').select('*').eq('id', annId).maybeSingle();
-    if (!data) { showToast('⚠️ Annonce introuvable'); return; }
+    if (!data) { showToast('Annonce introuvable'); return; }
     window._lastPubOpts = {
       nom: data.nom, grade: data.grade, disc: data.disc, reg: data.reg, prov: data.prov,
-      opts: { etab: data.etab, commune: data.commune, regsDest: data.regs_dest || [], provsDest: data.provs_dest || [], id: data.id }
+      opts: { etab: data.etab, commune: data.commune, regsDest: data.regs_dest || [], provsDest: data.provs_dest || [], id: data.id, tel: data.tel, tel2: data.tel2 }
     };
     // Ouvrir WhatsApp direct (raccourci le plus utilisé)
     shareToWhatsApp(data.nom, data.grade, data.disc, data.reg, data.prov, window._lastPubOpts.opts);
     incrementShareCount(data.id);
-  } catch(e) { showToast('⚠️ Erreur'); }
+  } catch(e) { showToast('Erreur'); }
+}
+
+// Télécharge l'image PNG de l'annonce par ID
+async function downloadAnnImageById(annId) {
+  var sb = await getSb(); if (!sb) { showToast('Connexion impossible'); return; }
+  try {
+    var { data } = await sb.from('annonces').select('*').eq('id', annId).maybeSingle();
+    if (!data) { showToast('Annonce introuvable'); return; }
+    window._lastPubOpts = {
+      nom: data.nom, grade: data.grade, disc: data.disc, reg: data.reg, prov: data.prov,
+      opts: { etab: data.etab, commune: data.commune, regsDest: data.regs_dest || [], provsDest: data.provs_dest || [], id: data.id, tel: data.tel, tel2: data.tel2 }
+    };
+    if (typeof downloadAnnImage === 'function') downloadAnnImage();
+  } catch(e) { showToast('Erreur'); }
 }
 
 function escH(s) {
@@ -2665,13 +2717,13 @@ function go(id) {
   if (id === 's-co') {
     var section = document.getElementById('mes-ann-compte');
     if(section) section.style.display = isLoggedIn ? 'block' : 'none';
-    var gami = document.getElementById('gami-card');
-    if(gami) gami.style.display = isLoggedIn ? 'block' : 'none';
+    var sch = document.getElementById('share-challenge-card');
+    if(sch) sch.style.display = isLoggedIn ? 'block' : 'none';
     // Masquer le formulaire connexion/inscription si déjà connecté
     var coCard = document.querySelector('#s-co .co-card');
     if (coCard) coCard.style.display = isLoggedIn ? 'none' : 'block';
     renderMesAnnoncesCompte();
-    try { renderGamiCard(); } catch(e){}
+    try { renderShareChallenge(); } catch(e){}
   }
   if (id === 's2' && isLoggedIn && currentUserData) {
     var fNom = document.getElementById('f-nom');
@@ -3432,50 +3484,45 @@ function waOptinWatchdog() {
 
 function openWaOptin() {
   var bg = document.getElementById('wa-modal-bg'); if (!bg) return;
-  // Pré-remplir si l'utilisateur est connecté
+  // Pré-remplir le numéro avec celui du compte si connecté
   try {
     if (isLoggedIn && currentUserData) {
       var p = document.getElementById('wa-phone'); if (p && !p.value) p.value = currentUserData.tel || '';
-      var c = document.getElementById('wa-corps');
-      if (c && !c.value && currentUserData.grade) {
-        var g = String(currentUserData.grade).split(/[ (—]/)[0];
-        for (var i=0;i<c.options.length;i++) if (c.options[i].value === g) { c.value = g; break; }
-      }
+      var info = document.getElementById('wa-already-info'); if (info) info.style.display = 'block';
     }
   } catch(e) {}
-  // Peupler les régions une fois (idempotent)
-  try { populateWaRegions(); } catch(e) {}
   bg.classList.add('show');
 }
 function closeWaOptin() {
   var bg = document.getElementById('wa-modal-bg'); if (bg) bg.classList.remove('show');
 }
-function populateWaRegions() {
-  ['wa-reg-actuelle','wa-reg-souhaitee'].forEach(function(id){
-    var sel = document.getElementById(id); if (!sel || sel.dataset.populated) return;
-    try {
-      var keys = Object.keys(REGIONS_PROVINCES || {});
-      keys.forEach(function(r){ var o = document.createElement('option'); o.value = r; o.textContent = r; sel.appendChild(o); });
-      sel.dataset.populated = '1';
-    } catch(e) {}
-  });
-}
 async function submitWaOptin() {
   var phoneEl = document.getElementById('wa-phone');
-  var corpsEl = document.getElementById('wa-corps');
-  var rAct    = document.getElementById('wa-reg-actuelle');
-  var rSouh   = document.getElementById('wa-reg-souhaitee');
   if (!phoneEl) return;
   var phone = (phoneEl.value || '').replace(/\D+/g,'');
-  if (phone.length < 8) { showToast('📱 Numéro WhatsApp invalide'); return; }
+  if (phone.length < 8) { showToast('Numéro WhatsApp invalide'); return; }
   var sb = await getSb(); if (!sb) { showToast('Connexion impossible — réessaie'); return; }
   try {
+    // Récupère les filtres depuis le profil de l'utilisateur connecté (s'il est connecté)
+    var corpsAuto = null, regActuelleAuto = null, regSouhaiteeAuto = null;
+    if (isLoggedIn && currentUserData) {
+      try {
+        if (currentUserData.grade) corpsAuto = String(currentUserData.grade).split(/[ (—]/)[0] || null;
+        // Tire la 1ère annonce de l'utilisateur pour ses régions actuelle / souhaitée
+        if (mesAnnonces && mesAnnonces.length) {
+          var first = mesAnnonces[0];
+          if (first.reg) regActuelleAuto = first.reg;
+          var dests = first.regs_dest || first.regsDest || [];
+          if (dests.length) regSouhaiteeAuto = dests[0];
+        }
+      } catch(e){}
+    }
     var payload = {
       wa_phone: phone,
       user_tel: (isLoggedIn && currentUserData) ? currentUserData.tel : null,
-      filter_corps: corpsEl && corpsEl.value || null,
-      filter_reg_actuelle: rAct && rAct.value || null,
-      filter_reg_souhaitee: rSouh && rSouh.value || null,
+      filter_corps: corpsAuto,
+      filter_reg_actuelle: regActuelleAuto,
+      filter_reg_souhaitee: regSouhaiteeAuto,
       is_active: true
     };
     var { error } = await sb.from('wa_alerts').insert([payload]);
@@ -3488,6 +3535,32 @@ async function submitWaOptin() {
     // Marqueur définitif : la bannière ne reviendra plus
     try { localStorage.setItem('fp_wa_optin_done', '1'); localStorage.removeItem('fp_wa_snooze_until'); } catch(e){}
   } catch(e) { console.warn(e); showToast('❌ Erreur — réessaie'); }
+}
+
+// --- WHATSAPP : queue un message pour un utilisateur particulier (par son user_tel) ---
+// Utilisé pour s'assurer que toute notif site arrive aussi sur WhatsApp
+async function queueWaForUser(userTel, message, annId) {
+  try {
+    if (!userTel || !message) return;
+    var sb = await getSb(); if (!sb) return;
+    // Cherche tous les wa_alerts actifs liés à ce user_tel
+    var { data: alerts } = await sb.from('wa_alerts').select('*').eq('user_tel', userTel).eq('is_active', true);
+    if (!alerts || !alerts.length) return;
+    var siteLink = (typeof FASOPERMUT_SITE !== 'undefined' ? FASOPERMUT_SITE : 'https://fasopermut.com');
+    var deepLink = annId ? siteLink + '/?ann=' + annId : siteLink;
+    var rows = alerts.map(function(al){
+      var fullMsg = message + '\n\nVoir : ' + deepLink + '\n— FasoPermut';
+      return {
+        wa_alert_id: al.id,
+        ann_id: annId || null,
+        wa_phone: al.wa_phone,
+        message: fullMsg,
+        wa_link: 'https://wa.me/' + al.wa_phone + '?text=' + encodeURIComponent(fullMsg),
+        status: 'pending'
+      };
+    });
+    await sb.from('wa_queue').insert(rows);
+  } catch(e) { console.warn('[queueWaForUser]', e); }
 }
 
 // --- WHATSAPP MATCHING (à appeler après publication) ---
@@ -3620,19 +3693,8 @@ async function bumpStreakNow() {
   } catch(e) { return 0; }
 }
 function renderStreakBadge(n) {
-  if (!n || n < 2) return; // on n'affiche qu'à partir de 2 jours
-  try {
-    var pill = document.getElementById('online-pill');
-    if (!pill) return;
-    if (document.getElementById('fp-streak-pill')) return;
-    var s = document.createElement('span');
-    s.id = 'fp-streak-pill';
-    s.className = 'fp-streak-badge';
-    s.style.marginLeft = '6px';
-    s.innerHTML = '🔥 ' + n + ' jours';
-    s.title = 'Tu visites FasoPermut depuis ' + n + ' jours d\'affilée !';
-    pill.parentNode.insertBefore(s, pill.nextSibling);
-  } catch(e) {}
+  // Désactivé — gamification retirée pour rester professionnel
+  return;
 }
 
 // --- NIVEAUX + POINTS ---
@@ -3830,14 +3892,34 @@ async function initApp() {
 
   // NOUVEAU : Demander permission push (après 8s d'activité, quand l'utilisateur est engagé)
   try { setTimeout(askPushPermission, 8000); } catch(e) {}
-  // Bannière WhatsApp opt-in (après 14s — laisse l'utilisateur explorer un peu)
-  try { setTimeout(askWaOptin, 14000); setInterval(waOptinWatchdog, 90000); } catch(e) {}
+  // Popup WhatsApp opt-in IMMÉDIAT — montre tout de suite la promesse "où que tu sois on te poursuit"
+  try { setTimeout(askWaOptin, 1500); setInterval(waOptinWatchdog, 60000); } catch(e) {}
 
   // ======= MOTEUR D'ADDICTION =======
   // Capture le ?ref=XXX dans l'URL pour stocker le code de parrainage en localStorage (utilisé à l'inscription)
   try {
     var ref = (typeof getQueryParam === 'function') ? getQueryParam('ref') : null;
     if (ref) localStorage.setItem('fp_ref_code', String(ref).toUpperCase());
+  } catch(e) {}
+
+  // Animation scroll-triggered : chaque ann-card devient visible quand elle entre dans le viewport
+  try {
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if (en.isIntersecting) { en.target.classList.add('fp-in-view'); io.unobserve(en.target); }
+        });
+      }, { threshold: 0.08, rootMargin: '40px' });
+      var observeAll = function(){
+        document.querySelectorAll('.ann-card:not(.fp-in-view)').forEach(function(c){ io.observe(c); });
+      };
+      observeAll();
+      // Réobserve périodiquement pour les nouvelles cards ajoutées dynamiquement
+      setInterval(observeAll, 1200);
+    } else {
+      // Fallback sans IntersectionObserver : tout devient visible
+      document.querySelectorAll('.ann-card').forEach(function(c){ c.classList.add('fp-in-view'); });
+    }
   } catch(e) {}
   // Compteur "X enseignants en ligne" (fictif, fluctue toutes les 12-25s pour effet naturel)
   try {
@@ -4385,8 +4467,61 @@ async function loadWaSubscribers() {
   } catch(e) { holder.innerHTML = '<div style="color:#e53935">Erreur</div>'; }
 }
 
-// ===== CARTE GAMIFICATION (compte) =====
-async function renderGamiCard() {
+// ===== DÉFI DE PARTAGE : 10 groupes WhatsApp = 1 mois premium gratuit =====
+function renderShareChallenge() {
+  if (!isLoggedIn || !currentUserData) return;
+  var holder = document.getElementById('share-challenge-content');
+  if (!holder) return;
+  var key = 'fp_share_challenge_' + (currentUserData.tel || '');
+  var count = parseInt(localStorage.getItem(key) || '0', 10);
+  var done = count >= 10;
+  var pct = Math.min(100, Math.round((count / 10) * 100));
+  var msg, btnHtml;
+  if (done) {
+    msg = '<div style="background:#e8f5e9;border-left:4px solid #25d366;padding:10px;border-radius:6px;font-size:12px;color:#1b5e20;font-weight:700">Défi accompli. Tu as accès à toutes les fonctions premium pendant 1 mois.</div>';
+    btnHtml = '';
+  } else {
+    msg = '<div style="font-size:12px;color:var(--txt2);line-height:1.5;margin-bottom:10px">Partage ton annonce dans <b>10 groupes WhatsApp d\'enseignants</b> et débloque <b>1 mois d\'accès premium gratuit</b> (alertes prioritaires, mise en avant de ton annonce, badge vérifié).</div>';
+    btnHtml = '<button onclick="bumpShareChallenge()" style="width:100%;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border:none;padding:12px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;margin-top:10px">Partager mon annonce maintenant</button>';
+  }
+  holder.innerHTML = ''
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+      + '<div style="font-size:13px;font-weight:700;color:var(--bleu)">Progression : ' + count + ' / 10</div>'
+      + '<div style="font-size:11px;color:var(--txt2)">' + (done ? 'Terminé' : (10 - count) + ' partage(s) restant(s)') + '</div>'
+    + '</div>'
+    + '<div style="background:#e8e8e8;height:10px;border-radius:5px;overflow:hidden;margin-bottom:10px"><div style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,#25d366,#128c7e);transition:width .4s"></div></div>'
+    + msg + btnHtml;
+}
+function bumpShareChallenge() {
+  if (!isLoggedIn || !currentUserData) return;
+  // Partage la première annonce de l'utilisateur (ou demande la création)
+  if (!mesAnnonces || !mesAnnonces.length) {
+    showToast('Publie d\'abord une annonce avant de partager');
+    setTimeout(function(){ go('s2'); }, 800);
+    return;
+  }
+  var a = mesAnnonces[0];
+  var nom = a.nom || (currentUserData && currentUserData.nom) || 'Enseignant';
+  var grade = (a.grade || '').split('(')[0].trim();
+  var disc = a.disc || '';
+  var reg = a.reg || '';
+  var prov = a.prov || '';
+  try {
+    if (typeof shareAnnonce === 'function') {
+      shareAnnonce(nom, grade, disc, reg, prov, { kind: 'whatsapp', annId: a.id, regsDest: a.regsDest || a.regs_dest, tel: a.tel, tel2: a.tel2 });
+    } else if (typeof shareToWhatsApp === 'function') {
+      shareToWhatsApp(nom, grade, disc, reg, prov);
+    }
+  } catch(e) { console.warn(e); }
+  // Incrémente le compteur
+  var key = 'fp_share_challenge_' + (currentUserData.tel || '');
+  var count = parseInt(localStorage.getItem(key) || '0', 10) + 1;
+  localStorage.setItem(key, String(count));
+  setTimeout(renderShareChallenge, 400);
+}
+
+// ===== CARTE GAMIFICATION (compte) — DÉSACTIVÉE (remplacée par défi partage) =====
+async function renderGamiCard_DISABLED() {
   if (!isLoggedIn || !currentUserData) return;
   var holder = document.getElementById('gami-content');
   if (!holder) return;
@@ -4877,31 +5012,17 @@ function adminTabSwitch(tab, ev) {
       <p>Reçois un message WhatsApp dès qu'un collègue correspondant à ton profil publie</p>
     </div>
     <div class="wa-modal-body">
-      <div style="background:#e8f5e9;border-left:4px solid #25d366;padding:9px 12px;border-radius:6px;font-size:11px;color:#1b5e20;margin-bottom:6px">
-        ✅ <b>100% gratuit</b> · 🔒 Numéro confidentiel · ⏰ Désinscription en 1 clic
+      <div style="background:#e8f5e9;border-left:4px solid #25d366;padding:9px 12px;border-radius:6px;font-size:11px;color:#1b5e20;margin-bottom:10px">
+        <b>100% gratuit</b> · Numéro confidentiel · Désinscription en 1 clic
+      </div>
+      <div style="font-size:12px;color:#444;margin-bottom:8px;line-height:1.5">
+        Recevois directement sur WhatsApp les permutations qui te correspondent, les annonces dans des zones proches, les actualités du ministère et les informations FasoPermut.
       </div>
       <label>Ton numéro WhatsApp *</label>
       <input type="tel" id="wa-phone" placeholder="70 00 00 00" inputmode="numeric" oninput="filterPhone&&filterPhone(this)">
-      <label>Corps / Grade (filtre, optionnel)</label>
-      <select id="wa-corps">
-        <option value="">— Tous les corps —</option>
-        <option value="PCLC">PCLC — Prof. lycées et collèges</option>
-        <option value="PCCEG">PCCEG — Prof. certifié CEG</option>
-        <option value="PCE">PCE — Prof. certifié des écoles</option>
-        <option value="PE">PE — Professeur des écoles</option>
-        <option value="CPE">CPE — Conseiller principal d'éducation</option>
-        <option value="CE">CE — Conseiller d'éducation</option>
-        <option value="ATE">ATE — Attaché d'éducation</option>
-        <option value="EPE">EPE — Éducateur petite enfance</option>
-        <option value="ECPE">ECPE — Éduc. certifié petite enfance</option>
-        <option value="AISU">AISU — Attaché d'intendance scolaire</option>
-      </select>
-      <label>Région où tu es actuellement (optionnel)</label>
-      <select id="wa-reg-actuelle"><option value="">— Toutes —</option></select>
-      <label>Région que tu veux rejoindre (optionnel)</label>
-      <select id="wa-reg-souhaitee"><option value="">— Toutes —</option></select>
-      <button class="wa-modal-submit" onclick="submitWaOptin()">✅ Activer mes alertes WhatsApp</button>
-      <div style="font-size:10px;color:#888;text-align:center;margin-top:8px">En cliquant tu acceptes que FasoPermut te contacte sur WhatsApp pour les annonces qui correspondent à tes critères.</div>
+      <div id="wa-already-info" style="display:none;font-size:11px;color:#1976d2;margin-top:6px;font-style:italic">Le système utilisera ton profil enseignant déjà enregistré pour cibler les permutations qui te concernent.</div>
+      <button class="wa-modal-submit" onclick="submitWaOptin()">Activer mes alertes WhatsApp</button>
+      <div style="font-size:10px;color:#888;text-align:center;margin-top:8px">En cliquant tu acceptes que FasoPermut te contacte sur WhatsApp pour les permutations et informations utiles.</div>
     </div>
   </div>
 </div>
