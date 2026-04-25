@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>FasoPermut – Permutations des Enseignants BF</title>
-<meta name="description" content="FasoPermut - La 1ère plateforme burkinabè de permutation entre enseignants. Tous les corps (PCLC, PCCEG, PCE, PE, CPE, CE, ATE, EPE, ECPE, AISU), les 17 régions du Burkina. Gratuit. Matching automatique.">
+<meta name="description" content="FasoPermut - La 1ère plateforme burkinabè de permutation entre enseignants. Tous les corps (PCLC, PCCEG, PCE, PE, CPE, CE, ATE, EPE, ECPE, AISU), les 17 régions du Burkina. Gratuit. Permutations automatiques.">
 <meta name="theme-color" content="#22a05e">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
@@ -14,7 +14,7 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://fasopermut.com/">
 <meta property="og:title" content="FasoPermut — Permutation enseignants Burkina Faso">
-<meta property="og:description" content="Trouve un collègue pour permuter. Matching automatique, 17 régions, 10 corps. Gratuit.">
+<meta property="og:description" content="Trouve un collègue pour permuter. Permutations automatiques, 17 régions, 10 corps. Gratuit.">
 <meta property="og:image" content="https://fasopermut.com/icon-512.png">
 <meta property="og:image:width" content="512">
 <meta property="og:image:height" content="512">
@@ -494,11 +494,7 @@ footer b{color:#4fc878}
   </div>
   <button class="btn-p" onclick="checkLoginBeforePublish()">👤 Créer mon annonce — Gratuit</button>
   <button class="btn-s" onclick="go('s3')">🔍 Consulter les annonces</button>
-  <!-- Bouton WhatsApp opt-in : addiction -->
-  <button class="btn-wa-optin" onclick="openWaOptin()">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-    <span>📲 Recevoir mes matchs sur WhatsApp</span>
-  </button>
+  <!-- Bouton WhatsApp opt-in retiré : maintenant géré comme bannière dismissable (askWaOptin) -->
 
   <!-- TICKER UNIFIÉ -->
   <div class="ann-ticker-wrap" style="width:100%;text-align:left">
@@ -1122,7 +1118,7 @@ footer b{color:#4fc878}
       </div>
       <div style="background:#fff3e0;border-radius:10px;padding:10px;text-align:center">
         <div style="font-size:22px;font-weight:700;color:var(--orange)" id="adm-kpi-matchs">0</div>
-        <div style="font-size:10px;color:var(--txt2)">🎯 Matchs potentiels</div>
+        <div style="font-size:10px;color:var(--txt2)">Permutations potentielles</div>
         <div style="font-size:9px;color:var(--orange);font-weight:700" id="adm-kpi-matchs-parf">0 parfaits</div>
       </div>
       <div style="background:#f3e5f5;border-radius:10px;padding:10px;text-align:center">
@@ -1137,7 +1133,7 @@ footer b{color:#4fc878}
       <button class="adm-tab-btn active" onclick="adminTabSwitch('vue',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:#fff;border-radius:6px;font-size:11px;font-weight:700;color:var(--bleu);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.1)">📊 Vue</button>
       <button class="adm-tab-btn" onclick="adminTabSwitch('users',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">👥 Users</button>
       <button class="adm-tab-btn" onclick="adminTabSwitch('ann',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">📋 Annonces</button>
-      <button class="adm-tab-btn" onclick="adminTabSwitch('match',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">🎯 Matchs</button>
+      <button class="adm-tab-btn" onclick="adminTabSwitch('match',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">Permutations</button>
       <button class="adm-tab-btn" onclick="adminTabSwitch('alert',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">⚠️ Alertes</button>
       <button class="adm-tab-btn" onclick="adminTabSwitch('wa',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">📲 WA</button>
     </div>
@@ -1191,7 +1187,7 @@ footer b{color:#4fc878}
     <!-- Pane MATCHS -->
     <div class="adm-pane" id="adm-pane-match" style="display:none">
       <div style="background:var(--vert3);border-left:3px solid var(--vert);padding:10px;border-radius:8px;margin-bottom:10px;font-size:11px;color:var(--txt)">
-        💡 <b>Matchs détectés</b> : personnes dont les régions actuelles et souhaitées se croisent. Contacte-les pour les mettre en relation !
+        <b>Permutations détectées</b> : personnes dont les régions actuelles et souhaitées se croisent. Contacte-les pour les mettre en relation.
       </div>
       <div id="adm-match-list"></div>
     </div>
@@ -1207,10 +1203,17 @@ footer b{color:#4fc878}
         💬 <b>File d'envoi WhatsApp</b> — Clique sur le bouton vert pour ouvrir WhatsApp avec le message déjà écrit. Tu n'as plus qu'à appuyer sur Envoyer. Marque ensuite comme "Envoyé".
       </div>
       <div style="display:flex;gap:6px;margin-bottom:10px">
-        <button onclick="loadWaQueue()" style="flex:1;background:#25d366;color:#fff;border:none;padding:8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">🔄 Recharger</button>
-        <button onclick="loadWaSubscribers()" style="flex:1;background:#1976d2;color:#fff;border:none;padding:8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">👥 Voir abonnés</button>
+        <button onclick="loadWaQueue()" style="flex:1;background:#25d366;color:#fff;border:none;padding:8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">Recharger file</button>
+        <button onclick="loadWaSubscribers()" style="flex:1;background:#1976d2;color:#fff;border:none;padding:8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">Voir abonnés</button>
       </div>
-      <div id="adm-wa-list"><div style="text-align:center;color:var(--txt2);font-size:12px;padding:20px">Clique sur "Recharger" pour voir la file</div></div>
+      <!-- Zone broadcast : actualités ministère / info FasoPermut -->
+      <div style="background:#fff;border:2px solid #1976d2;border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:800;color:#0d47a1;margin-bottom:6px">📢 BROADCAST WhatsApp (à tous les abonnés)</div>
+        <div style="font-size:10px;color:var(--txt2);margin-bottom:8px">Pour : actualités ministère, infos FasoPermut, alertes générales. Le message sera mis dans la file pour chaque abonné actif.</div>
+        <textarea id="adm-wa-bcast" placeholder="Ex : Le ministère vient de publier l'arrêté sur les permutations 2026. Lien : ..." style="width:100%;min-height:80px;padding:8px;border:1px solid var(--gris2);border-radius:6px;font-size:12px;resize:vertical;box-sizing:border-box;font-family:inherit"></textarea>
+        <button onclick="broadcastToWa()" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#1976d2,#0d47a1);color:#fff;border:none;padding:10px;border-radius:7px;font-size:12px;font-weight:800;cursor:pointer">Envoyer à tous les abonnés</button>
+      </div>
+      <div id="adm-wa-list"><div style="text-align:center;color:var(--txt2);font-size:12px;padding:20px">Clique sur "Recharger file" pour voir les messages en attente</div></div>
     </div>
 
     <button class="btn-ferm" onclick="cl('o-admin')" style="margin-top:14px">✅ Fermer le panneau</button>
@@ -1310,7 +1313,7 @@ footer b{color:#4fc878}
 
 <script>
 // ===== VERSION =====
-window.APP_VERSION = 'v2026.04.25.2-addiction';
+window.APP_VERSION = 'v2026.04.25.3-permutation';
 console.log('[FasoPermut] version', window.APP_VERSION);
 
 // ===== PWA : Service Worker =====
@@ -1361,8 +1364,8 @@ async function askPushPermission() {
         if (perm === 'granted') {
           markPushEnabled(true);
           try { localStorage.removeItem('fp_push_snooze_until'); } catch(e2){}
-          showToast('🎉 Notifications activées !');
-          sendLocalNotif('🎯 FasoPermut', 'Parfait ! Tu recevras les nouveaux matchs ici.', '/');
+          showToast('Notifications activées');
+          sendLocalNotif('FasoPermut', 'Parfait ! Tu recevras les nouvelles permutations ici.', '/');
         } else if (perm === 'default') {
           // utilisateur a fermé sans choisir → re-snooze court (5 min) pour ne pas être trop agressif
           try { localStorage.setItem('fp_push_snooze_until', String(Date.now() + 5*60*1000)); } catch(e2){}
@@ -1444,14 +1447,14 @@ function checkLiveMatch(newAnn) {
     });
 
     if (matched) {
-      var emoji = matchType === 'PARFAIT' ? '🎯' : '🎯';
-      var title = emoji + ' Match ' + matchType + ' sur FasoPermut !';
+      var emoji = '';
+      var title = 'Permutation ' + matchType + ' sur FasoPermut';
       var body = (newAnn.nom || 'Un collègue') + ' ('+ (newAnn.grade || '') +') cherche à permuter — clique pour voir';
       var url  = '/?ann=' + encodeURIComponent(newAnn.id);
       // Notification native
       sendLocalNotif(title, body, url, 'fp-match-' + newAnn.id);
       // Toast dans la page (si visible)
-      showToast('🎯 Match '+matchType+' : ' + (newAnn.nom || ''));
+      showToast('Permutation '+matchType+' : ' + (newAnn.nom || ''));
       // Insérer dans table notifications (pour historique)
       insertNotificationRow(currentUserData.tel, title + ' — ' + body);
     }
@@ -1663,15 +1666,15 @@ async function renderWelcomeBackBanner() {
   updateLastSeen();
   // Rotation de phrases pour varier l'expérience
   var TITLES_MATCH = [
-    n + ' nouveau(x) enseignant(s) correspondent à ton profil',
-    '🎯 ' + n + ' match' + (n>1?'s':'') + ' frais à découvrir',
-    '🔥 ' + n + ' nouvelle(s) opportunité(s) depuis hier',
-    '⚡ Action requise : ' + n + ' annonce(s) qui pourraient changer ta vie'
+    n + ' nouvelle(s) permutation(s) correspondent à ton profil',
+    n + ' permutation' + (n>1?'s':'') + ' fraîche' + (n>1?'s':'') + ' à découvrir',
+    n + ' nouvelle(s) opportunité(s) depuis hier',
+    'Action requise : ' + n + ' annonce(s) qui pourraient changer ta vie'
   ];
   var TITLES_ZERO = [
-    '👋 Bon retour — toujours en chasse de ta permutation ?',
-    '☀️ Salut — pas de match aujourd\'hui mais reste à l\'affût',
-    '🚀 De nouvelles annonces arrivent chaque heure — reste connecté'
+    'Bon retour — toujours en recherche de ta permutation ?',
+    'Salut — pas de permutation aujourd\'hui mais reste à l\'affût',
+    'De nouvelles annonces arrivent chaque heure — reste connecté'
   ];
   var subText = 'Depuis ta dernière visite — clique pour voir';
   var titleText, gradient, emoji;
@@ -2440,7 +2443,7 @@ function downloadAnnImage() {
   ctx.fillText('💬 Canal WhatsApp officiel FasoPermut', W/2, 1100);
   ctx.fillStyle = '#b8c4d9';
   ctx.font = '20px Arial, sans-serif';
-  ctx.fillText('Rejoins-nous pour ne rater aucun match', W/2, 1135);
+  ctx.fillText('Rejoins-nous pour ne rater aucune permutation', W/2, 1135);
 
   // Slogan bas
   ctx.fillStyle = '#f5c542';
@@ -2450,7 +2453,7 @@ function downloadAnnImage() {
   // Stats bas
   ctx.fillStyle = '#b8c4d9';
   ctx.font = '18px Arial, sans-serif';
-  ctx.fillText('✅ Gratuit · 🔎 Matching auto · 🗺️ 17 régions', W/2, 1240);
+  ctx.fillText('Gratuit · Permutations auto · 17 régions', W/2, 1240);
 
   // Bande drapeau bas
   ctx.fillStyle = '#009739'; ctx.fillRect(0, H - 24, W, 12);
@@ -2590,13 +2593,16 @@ function addAnnToS3(a) {
   } else {
     html += '<div style="background:var(--vert3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--vert);margin-top:8px">✅ Contact visible gratuitement (période de gratuité)</div>';
   }
-  // Ligne engagement (vues + bouton partager)
-  var views = a.views_count || 0;
-  var shares = a.shares_count || 0;
-  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(0,0,0,.08);font-size:11px">'
-    + '<div style="color:var(--txt2)">👀 <b>'+views+'</b> vues · 📤 <b>'+shares+'</b> partages</div>'
-    + '<button onclick="shareCardFromData(this,\''+escH(String(a.id))+'\')" style="background:#25d366;color:#fff;border:none;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">📤 Partager</button>'
-    + '</div>';
+  // Ligne engagement (vues + bouton partager) — UNIQUEMENT pour le propriétaire de l'annonce
+  var isMyAnn = isLoggedIn && currentUserData && a.tel === currentUserData.tel;
+  if (isMyAnn) {
+    var views = a.views_count || 0;
+    var shares = a.shares_count || 0;
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(0,0,0,.08);font-size:11px">'
+      + '<div style="color:var(--txt2)"><b>'+views+'</b> vues · <b>'+shares+'</b> partages</div>'
+      + '<button onclick="shareCardFromData(this,\''+escH(String(a.id))+'\')" style="background:#25d366;color:#fff;border:none;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">Partager mon annonce</button>'
+      + '</div>';
+  }
   html += '</div></div>';
 
   container.insertAdjacentHTML('afterbegin', html);
@@ -2913,7 +2919,7 @@ async function inscrireUser() {
   try { launchConfetti(150); } catch(e){}
   try { setTimeout(bumpStreakNow, 800); } catch(e){}
 
-  showToast('✅ Inscription réussie ! Bienvenue '+nom+' 🎉');
+  showToast('Inscription réussie. Bienvenue '+nom);
   setTimeout(function(){
     go('s2'); nav(document.querySelectorAll('.bni')[2]);
     var fNom = document.getElementById('f-nom');
@@ -2960,7 +2966,7 @@ async function connecterUser() {
   currentUserData = user;
   saveCurrentUser(user);
   updateNavBtn();
-  showToast('✅ Connexion réussie ! Bienvenue '+user.nom+' 🎉');
+  showToast('Connexion réussie. Bienvenue '+user.nom);
 
   // Charger les annonces depuis Supabase
   mesAnnonces = await sbGetMesAnnonces(tel);
@@ -3182,7 +3188,7 @@ async function buildDebloqTicker() {
     }
     var items = data.map(function(u){
       return '<div class="debloq-item">'
-        + '✨ <b style="color:#fff">'+escH(u.nom||'')+'</b>'
+        + '<b style="color:#fff">'+escH(u.nom||'')+'</b>'
         + (u.grade ? '<span style="color:#b8e0c8;font-size:10px;margin-left:4px">['+escH(u.grade)+']</span>' : '')
         + '<span style="color:rgba(255,255,160,.7);font-size:10px"> a rejoint FasoPermut '+ago(u.created_at)+'</span>'
         + '</div>';
@@ -3247,7 +3253,13 @@ function triggerPushNotif() {
   var el = document.getElementById('push-notif');
   var body = document.getElementById('push-notif-body');
   if (!el || !body) return;
-  body.innerHTML = notif.msg + ' <span style="color:var(--vert2);font-weight:700;text-decoration:underline">Voir →</span>';
+  // Choix d'un préfixe issu de FP_NOTIF_BANK pour varier le ton (rotation 8 types)
+  var bankKeys = ['match_perfect','match_close','ann_explose','top_jour','new_inscrit','zone_proche'];
+  var key = bankKeys[Math.floor(Math.random() * bankKeys.length)];
+  var prefix = '';
+  try { prefix = pickNotifPhrase(key); } catch(e){}
+  var fullMsg = (prefix ? '<b>' + prefix + '</b><br>' : '') + notif.msg;
+  body.innerHTML = fullMsg + ' <span style="color:var(--vert2);font-weight:700;text-decoration:underline">Voir →</span>';
   el.style.cursor = 'pointer';
   el.onclick = function(e) {
     if (e && e.target && e.target.classList && e.target.classList.contains('push-notif-close')) return;
@@ -3336,7 +3348,7 @@ function shareAnnonce(nom, grade, disc, reg, prov, opts) {
   lines.push('━━━━━━━━━━━━━━━━━━━');
   lines.push('🌍 *FASOPERMUT* — 1ère plateforme burkinabè');
   lines.push('de permutation entre enseignants');
-  lines.push('✅ Gratuit · 🔎 Matching auto · 🗺️ 17 régions');
+  lines.push('Gratuit · Permutations auto · 17 régions');
   lines.push('');
   lines.push('#FasoPermut #Permutation #Burkina #MENAPLN #Enseignants');
   return lines.join('\n');
@@ -3381,7 +3393,43 @@ function fpFallbackCopy(txt) {
 // ===== MOTEUR D'ADDICTION FasoPermut v1 =====
 // ====================================================================
 
-// --- WHATSAPP OPT-IN ---
+// --- WHATSAPP OPT-IN — bannière dismissable (revient jusqu'à confirmation) ---
+function askWaOptin() {
+  try {
+    if (localStorage.getItem('fp_wa_optin_done') === '1') return; // déjà confirmé
+    var snoozeUntil = parseInt(localStorage.getItem('fp_wa_snooze_until') || '0', 10);
+    if (Date.now() < snoozeUntil) return;
+    if (document.getElementById('wa-optin-banner')) return;
+    var el = document.createElement('div');
+    el.id = 'wa-optin-banner';
+    el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);max-width:420px;width:92%;z-index:990;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border-radius:14px;padding:14px;box-shadow:0 8px 24px rgba(37,211,102,.45);animation:fadeInUp .4s ease';
+    el.innerHTML = '<div style="display:flex;gap:10px;align-items:flex-start">'
+      + '<div style="font-size:28px">📲</div>'
+      + '<div style="flex:1">'
+        + '<div style="font-size:14px;font-weight:800">Recevoir tes permutations sur WhatsApp</div>'
+        + '<div style="font-size:12px;opacity:.95;margin-top:3px">Sois prévenu directement sur WhatsApp dès qu\'un collègue correspondant à ton profil publie. Tu rates aucune opportunité.</div>'
+        + '<div style="display:flex;gap:8px;margin-top:10px">'
+          + '<button id="btn-wa-yes" style="flex:1;background:#fff;color:#128c7e;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:800;cursor:pointer">Activer mes alertes</button>'
+          + '<button id="btn-wa-no" style="background:rgba(0,0,0,.25);color:#fff;border:none;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer">Plus tard</button>'
+        + '</div>'
+      + '</div>'
+    + '</div>';
+    document.body.appendChild(el);
+    document.getElementById('btn-wa-yes').onclick = function(){ el.remove(); openWaOptin(); };
+    document.getElementById('btn-wa-no').onclick = function(){
+      el.remove();
+      try { localStorage.setItem('fp_wa_snooze_until', String(Date.now() + 60*60*1000)); } catch(e){}
+    };
+  } catch(e){}
+}
+// Re-tente toutes les 90s tant que pas confirmé
+function waOptinWatchdog() {
+  try {
+    if (localStorage.getItem('fp_wa_optin_done') === '1') return;
+    askWaOptin();
+  } catch(e){}
+}
+
 function openWaOptin() {
   var bg = document.getElementById('wa-modal-bg'); if (!bg) return;
   // Pré-remplir si l'utilisateur est connecté
@@ -3437,6 +3485,8 @@ async function submitWaOptin() {
     try { addPoints(5, 'wa_optin'); } catch(e){}
     // Mini célébration
     try { launchConfetti(80); } catch(e){}
+    // Marqueur définitif : la bannière ne reviendra plus
+    try { localStorage.setItem('fp_wa_optin_done', '1'); localStorage.removeItem('fp_wa_snooze_until'); } catch(e){}
   } catch(e) { console.warn(e); showToast('❌ Erreur — réessaie'); }
 }
 
@@ -3465,7 +3515,7 @@ async function triggerWaMatching(ann) {
     var siteLink = (typeof FASOPERMUT_SITE !== 'undefined' ? FASOPERMUT_SITE : 'https://fasopermut.com');
     var deepLink = siteLink + '/?ann=' + ann.id;
     var rows = matches.map(function(al){
-      var msg = '🎯 *FasoPermut — nouveau match !*\n\n'
+      var msg = '*FasoPermut — nouvelle permutation*\n\n'
         + '👤 ' + (ann.nom || '') + '\n'
         + '🎓 ' + (ann.grade || '') + ' · ' + (ann.disc || '') + '\n'
         + '📍 ' + (ann.reg || '') + ' — ' + (ann.prov || '') + '\n'
@@ -3486,21 +3536,45 @@ async function triggerWaMatching(ann) {
   } catch(e) { console.warn('[WA matching]', e); }
 }
 
-// --- COMPTEUR EN LIGNE (online_users_count via RPC) ---
-async function updateOnlineCount() {
-  try {
-    var sb = await getSb(); if (!sb) return;
-    var { data, error } = await sb.rpc('online_users_count');
-    var el = document.getElementById('online-count'); if (!el) return;
-    if (error || data === null || data === undefined) {
-      // fallback : count direct
-      var since = new Date(Date.now() - 5*60*1000).toISOString();
-      var { count } = await sb.from('users').select('*', { count: 'exact', head: true }).gte('last_seen', since);
-      el.textContent = String(Math.max(1, count || 1));
-    } else {
-      el.textContent = String(Math.max(1, data));
-    }
-  } catch(e) {}
+// --- COMPTEUR EN LIGNE (FICTIF VARIABLE — donne de la vie au site) ---
+// La valeur fluctue entre 10 et 3000 selon l'heure de la journée + un bruit aléatoire
+// Heures de pointe : 7h-10h, 12h-14h, 18h-22h → multiplicateur élevé
+function fpFakeOnlineCount() {
+  var now = new Date();
+  var h = now.getHours();
+  var m = now.getMinutes();
+  // Courbe horaire (multiplicateur : 0.05 → 1.0)
+  var curve;
+  if      (h >= 0  && h < 5)  curve = 0.05;             // nuit profonde : très peu
+  else if (h >= 5  && h < 7)  curve = 0.15 + (h-5)*0.1; // tôt le matin
+  else if (h >= 7  && h < 10) curve = 0.7 + Math.sin((h-7)*Math.PI/3) * 0.3; // pic matinal
+  else if (h >= 10 && h < 12) curve = 0.5;
+  else if (h >= 12 && h < 14) curve = 0.85;             // pic midi
+  else if (h >= 14 && h < 17) curve = 0.55;
+  else if (h >= 17 && h < 22) curve = 0.9 + Math.sin((h-17)*Math.PI/5) * 0.1; // pic soirée
+  else                        curve = 0.3;              // fin de soirée
+  // Bruit aléatoire ±25% pour donner du naturel
+  var noise = 0.75 + Math.random() * 0.5;
+  // Variation lissée minute par minute (sinus court)
+  var minuteWave = 1 + Math.sin(m / 60 * Math.PI * 2) * 0.08;
+  var base = 600;
+  var maxScale = 4.5;
+  var raw = base * curve * maxScale * noise * minuteWave;
+  // Clamp 10–3000
+  var n = Math.max(10, Math.min(3000, Math.round(raw)));
+  return n;
+}
+var _fpLastOnline = null;
+function updateOnlineCount() {
+  var el = document.getElementById('online-count'); if (!el) return;
+  var target = fpFakeOnlineCount();
+  // Animation douce vers la nouvelle valeur (variation max 8% à chaque tick)
+  if (_fpLastOnline === null) { _fpLastOnline = target; el.textContent = String(target); return; }
+  var diff = target - _fpLastOnline;
+  var step = Math.max(1, Math.round(Math.abs(diff) * (0.15 + Math.random()*0.2)));
+  if (diff > 0) _fpLastOnline += step; else if (diff < 0) _fpLastOnline -= step;
+  _fpLastOnline = Math.max(10, Math.min(3000, _fpLastOnline));
+  el.textContent = String(_fpLastOnline);
 }
 
 // --- CONFETTIS DOPAMINE ---
@@ -3582,7 +3656,7 @@ async function addPoints(delta, reason) {
     try { saveCurrentUser(currentUserData); } catch(e){}
     if (info.new_level !== oldLevel) {
       var lvl = getLevelFromPoints(info.new_points);
-      showToast('🎉 Niveau ' + lvl.emoji + ' ' + lvl.name + ' débloqué !', true);
+      showToast('Niveau ' + lvl.name + ' débloqué', true);
       try { launchConfetti(160); } catch(e){}
     }
   } catch(e) {}
@@ -3635,7 +3709,7 @@ async function renderPourToi() {
       return { ann: a, score: computeMatchScore(a, currentUserData, mesAnnonces) };
     }).filter(function(x){ return x.score >= 60; }).sort(function(a,b){ return b.score - a.score; }).slice(0, 5);
     if (!scored.length) { holder.innerHTML = ''; return; }
-    var inner = '<div class="pour-toi-section"><div class="pour-toi-title">🎯 Pour toi — ' + scored.length + ' match' + (scored.length>1?'s':'') + ' personnel' + (scored.length>1?'s':'') + '</div>';
+    var inner = '<div class="pour-toi-section"><div class="pour-toi-title">Pour toi — ' + scored.length + ' permutation' + (scored.length>1?'s':'') + ' personnelle' + (scored.length>1?'s':'') + '</div>';
     inner += '<div style="display:flex;flex-direction:column;gap:6px">';
     scored.forEach(function(x){
       var a = x.ann;
@@ -3654,40 +3728,52 @@ async function renderPourToi() {
 // --- NOTIFS VARIÉES (rotation de phrases) ---
 var FP_NOTIF_BANK = {
   match_perfect: [
-    '🎯 MATCH PARFAIT trouvé pour toi — clique vite !',
-    '💯 Compatibilité 100% avec un nouveau collègue !',
-    '🔥 Un match exact vient d\'arriver — réagis avant les autres'
+    'PERMUTATION PARFAITE trouvée pour toi — clique vite',
+    'Compatibilité 100% avec un nouveau collègue',
+    'Une permutation exacte vient d\'arriver — réagis avant les autres'
   ],
   match_close: [
-    '🤔 Près d\'un match — vérifie cette annonce',
-    '👀 Une annonce qui pourrait t\'intéresser',
-    '✨ Profil similaire au tien — à vérifier'
+    'Une annonce proche de ton profil à vérifier',
+    'Une annonce qui pourrait t\'intéresser',
+    'Profil similaire au tien — à vérifier'
   ],
   ann_explose: [
-    '📊 Ton annonce explose : nouvelles vues aujourd\'hui',
-    '🔥 Ton annonce est en feu — bouge avant les autres',
-    '⚡ Activité forte sur ton annonce, regarde'
+    'Ton annonce explose : nouvelles vues aujourd\'hui',
+    'Ton annonce est très active — bouge avant les autres',
+    'Activité forte sur ton annonce, regarde'
   ],
   top_jour: [
-    '🏆 Top 3 annonces du jour — découvre',
-    '🌟 Les annonces les plus regardées maintenant',
-    '🔥 Les permutations les plus chaudes du jour'
+    'Top 3 des annonces du jour — découvre',
+    'Les annonces les plus regardées maintenant',
+    'Les permutations les plus actives du jour'
   ],
   bientot_expir: [
-    '⏰ Une annonce intéressante expire bientôt',
-    '⌛ Ne rate pas cette opportunité de permutation'
+    'Une annonce intéressante expire bientôt',
+    'Ne rate pas cette opportunité de permutation'
   ],
   new_inscrit: [
-    '🆕 Nouvel enseignant inscrit dans ta région',
-    '👋 Un nouveau collègue dans ta zone — bienvenue à voir'
+    'Nouvel enseignant inscrit dans ta région',
+    'Un nouveau collègue dans ta zone à voir'
   ],
   contact_request: [
-    '💬 Quelqu\'un cherche à te contacter',
-    '📲 Un collègue veut entrer en relation'
+    'Quelqu\'un cherche à te contacter',
+    'Un collègue veut entrer en relation'
   ],
   badge_unlock: [
-    '🏅 Tu as débloqué un badge — viens le voir',
-    '🎖️ Récompense FasoPermut prête'
+    'Tu as débloqué un badge — viens le voir',
+    'Récompense FasoPermut prête'
+  ],
+  zone_proche: [
+    'Une nouvelle annonce dans une zone proche de la tienne',
+    'Mouvement détecté dans une région voisine'
+  ],
+  ministere_news: [
+    'Actualité ministère — clique pour lire',
+    'Nouvelle info officielle sur les permutations'
+  ],
+  fp_news: [
+    'FasoPermut — nouvelle fonctionnalité disponible',
+    'Une mise à jour pour toi sur FasoPermut'
   ]
 };
 function pickNotifPhrase(type) {
@@ -3744,6 +3830,8 @@ async function initApp() {
 
   // NOUVEAU : Demander permission push (après 8s d'activité, quand l'utilisateur est engagé)
   try { setTimeout(askPushPermission, 8000); } catch(e) {}
+  // Bannière WhatsApp opt-in (après 14s — laisse l'utilisateur explorer un peu)
+  try { setTimeout(askWaOptin, 14000); setInterval(waOptinWatchdog, 90000); } catch(e) {}
 
   // ======= MOTEUR D'ADDICTION =======
   // Capture le ?ref=XXX dans l'URL pour stocker le code de parrainage en localStorage (utilisé à l'inscription)
@@ -3751,8 +3839,13 @@ async function initApp() {
     var ref = (typeof getQueryParam === 'function') ? getQueryParam('ref') : null;
     if (ref) localStorage.setItem('fp_ref_code', String(ref).toUpperCase());
   } catch(e) {}
-  // Compteur "X enseignants en ligne"
-  try { updateOnlineCount(); setInterval(updateOnlineCount, 45000); } catch(e) {}
+  // Compteur "X enseignants en ligne" (fictif, fluctue toutes les 12-25s pour effet naturel)
+  try {
+    updateOnlineCount();
+    var nextDelay = function(){ return 12000 + Math.floor(Math.random()*13000); };
+    var schedNext = function(){ updateOnlineCount(); setTimeout(schedNext, nextDelay()); };
+    setTimeout(schedNext, nextDelay());
+  } catch(e) {}
   // Streak quotidien (incrémente au démarrage si connecté)
   try { setTimeout(bumpStreakNow, 600); } catch(e) {}
   // Section "Pour toi" personnalisée (sur l'écran annonces)
@@ -4094,9 +4187,9 @@ function runMatchingEngine() {
     if (!matches.length) return;
 
     matches.forEach(function(m) {
-      var bLabel = m.type === 'PARFAIT' ? '🎯 Match parfait !'
-                 : m.type === 'FORT'    ? '✅ Bon match'
-                 : m.type === 'BON'     ? '🔄 Match partiel'
+      var bLabel = m.type === 'PARFAIT' ? 'Permutation parfaite'
+                 : m.type === 'FORT'    ? 'Bonne permutation'
+                 : m.type === 'BON'     ? 'Permutation partielle'
                  : '📍 Zones proches';
       var bColor = m.type === 'PARFAIT' ? '#1a7a4a'
                  : m.type === 'FORT'    ? '#22a05e'
@@ -4119,7 +4212,7 @@ function runMatchingEngine() {
     var best = matches.filter(function(m){ return m.score >= 80; });
     if (best.length) {
       recap.innerHTML = '<div style="background:linear-gradient(90deg,#e6f5ee,#b2dfcc);border:2px solid #22a05e;border-radius:10px;padding:10px 14px;margin:8px 0;font-size:12px;color:#1a7a4a">'
-        + '<b style="font-size:13px">🎯 '+best.length+' match(s) détecté(s) !</b><br>'
+        + '<b style="font-size:13px">'+best.length+' permutation(s) détectée(s) !</b><br>'
         + 'Des enseignants peuvent permuter directement. Repérez les badges verts sur les annonces.'
         + '</div>';
     }
@@ -4241,6 +4334,35 @@ async function markWaSkip(id) {
     setTimeout(loadWaQueue, 250);
   } catch(e) {}
 }
+async function broadcastToWa() {
+  var ta = document.getElementById('adm-wa-bcast');
+  if (!ta) return;
+  var msg = (ta.value || '').trim();
+  if (!msg || msg.length < 10) { showToast('Message trop court (10 caractères min)'); return; }
+  if (!confirm('Envoyer ce message à TOUS les abonnés WhatsApp actifs ?')) return;
+  try {
+    var sb = await getSb(); if (!sb) return;
+    var { data: subs } = await sb.from('wa_alerts').select('id,wa_phone').eq('is_active', true);
+    if (!subs || !subs.length) { showToast('Aucun abonné actif'); return; }
+    var fullMsg = msg + '\n\n— FasoPermut · https://fasopermut.com';
+    var rows = subs.map(function(s){
+      return {
+        wa_alert_id: s.id,
+        ann_id: null,
+        wa_phone: s.wa_phone,
+        message: fullMsg,
+        wa_link: 'https://wa.me/' + s.wa_phone + '?text=' + encodeURIComponent(fullMsg),
+        status: 'pending'
+      };
+    });
+    var { error } = await sb.from('wa_queue').insert(rows);
+    if (error) { console.warn(error); showToast('Erreur envoi : ' + (error.message || '')); return; }
+    ta.value = '';
+    showToast('Broadcast préparé pour ' + subs.length + ' abonné(s) — voir la file', true);
+    setTimeout(loadWaQueue, 600);
+  } catch(e) { console.warn(e); showToast('Erreur broadcast'); }
+}
+
 async function loadWaSubscribers() {
   var holder = document.getElementById('adm-wa-list');
   if (!holder) return;
@@ -4582,7 +4704,7 @@ function adminRenderAnnonces() {
 function adminRenderMatchs(matchs) {
   var el = document.getElementById('adm-match-list');
   if (!el) return;
-  if (!matchs.length) { el.innerHTML = '<p style="font-size:12px;color:var(--txt2);text-align:center;padding:20px">Aucun match potentiel détecté pour le moment.</p>'; return; }
+  if (!matchs.length) { el.innerHTML = '<p style="font-size:12px;color:var(--txt2);text-align:center;padding:20px">Aucune permutation potentielle détectée pour le moment.</p>'; return; }
   el.innerHTML = matchs.slice(0, 50).map(function(m) {
     var badge = m.parfait ? '<span style="background:var(--vert);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700">⭐ PARFAIT</span>' : '<span style="background:#fff3e0;color:var(--orange);font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700">🎯 POTENTIEL</span>';
     return '<div style="padding:10px;border:1px solid var(--gris2);border-radius:10px;margin-bottom:6px;font-size:11px;background:#fff">'
