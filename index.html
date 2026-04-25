@@ -88,7 +88,44 @@ nav{background:var(--bleu);display:flex;align-items:center;justify-content:space
 .btn-p{display:block;width:100%;background:var(--vert2);color:#fff;border:none;padding:15px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 14px rgba(34,160,94,.4)}
 .btn-p:hover{background:#1a8a50}
 .btn-s{display:block;width:100%;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.28);padding:13px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px}
+.btn-wa-optin{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border:none;padding:14px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 16px rgba(37,211,102,.45);animation:fpWaPulse 2.4s ease-in-out infinite;transition:transform .15s}
+.btn-wa-optin:active{transform:scale(.97)}
 .note1{color:#6a8aa8;font-size:10px;margin-top:10px}
+@keyframes fpOnlineDot{0%,100%{box-shadow:0 0 0 0 rgba(79,200,120,.7)}70%{box-shadow:0 0 0 10px rgba(79,200,120,0)}}
+/* Welcome back banner */
+.fp-welcome-back{background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;border-radius:12px;padding:11px 14px;margin:8px 0;text-align:left;animation:fadeInUp .4s ease;box-shadow:0 4px 14px rgba(21,101,192,.4)}
+.fp-welcome-back-title{font-size:13px;font-weight:800;margin-bottom:2px}
+.fp-welcome-back-sub{font-size:11px;opacity:.92}
+/* Streak badge */
+.fp-streak-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#ff6f00,#e65100);color:#fff;padding:4px 11px;border-radius:14px;font-size:11px;font-weight:800;box-shadow:0 2px 8px rgba(245,124,0,.4)}
+/* Badges sur annonces */
+.ann-badge-fire{display:inline-block;background:linear-gradient(135deg,#ff5722,#e64a19);color:#fff;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:800;margin-left:6px;box-shadow:0 2px 5px rgba(255,87,34,.4);animation:fpBadgePulse 1.5s infinite}
+.ann-badge-new{display:inline-block;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:800;margin-left:6px;box-shadow:0 2px 5px rgba(76,175,80,.4)}
+.ann-match-score{display:inline-block;background:linear-gradient(135deg,#1976d2,#0d47a1);color:#fff;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:800;margin-left:6px;box-shadow:0 2px 5px rgba(25,118,210,.4)}
+.ann-match-score.high{background:linear-gradient(135deg,#22a05e,#1a8a50)}
+@keyframes fpBadgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+/* Confettis container */
+#fp-confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden}
+.fp-confetti{position:absolute;width:10px;height:10px;animation:fpConfFall 2.2s ease-in forwards}
+@keyframes fpConfFall{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+/* Modal WhatsApp opt-in */
+.wa-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9990;display:none;align-items:center;justify-content:center;padding:20px}
+.wa-modal-bg.show{display:flex;animation:fadeIn .3s}
+.wa-modal{background:#fff;border-radius:18px;max-width:440px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5);position:relative}
+.wa-modal-hdr{background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;padding:18px;border-radius:18px 18px 0 0;text-align:center}
+.wa-modal-hdr h3{margin:0 0 6px;font-size:18px}
+.wa-modal-hdr p{font-size:12px;opacity:.95;margin:0}
+.wa-modal-body{padding:18px;color:#333}
+.wa-modal-body label{display:block;font-size:12px;font-weight:700;color:#555;margin:10px 0 4px}
+.wa-modal-body input,.wa-modal-body select{width:100%;padding:11px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;background:#fff;color:#222}
+.wa-modal-body input:focus,.wa-modal-body select:focus{border-color:#25d366;outline:none}
+.wa-modal-close{position:absolute;top:10px;right:14px;background:rgba(255,255,255,.25);color:#fff;border:none;width:30px;height:30px;border-radius:50%;font-size:18px;cursor:pointer;font-weight:700}
+.wa-modal-submit{width:100%;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border:none;padding:14px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;margin-top:14px;box-shadow:0 4px 14px rgba(37,211,102,.4)}
+.wa-modal-submit:active{transform:scale(.98)}
+/* Section Pour toi */
+.pour-toi-section{background:linear-gradient(135deg,#fff8e1,#fff3c4);border:2px solid #ffc107;border-radius:14px;padding:14px;margin-bottom:14px}
+.pour-toi-title{font-size:13px;font-weight:800;color:#e65100;margin-bottom:8px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
 /* TICKER ANNONCES DEFILANTES */
 .ann-ticker-wrap{width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.15);border-radius:10px;margin:14px 0 8px;overflow:hidden}
@@ -443,6 +480,13 @@ footer b{color:#4fc878}
   <div class="badge">Plateforme Nationale de Permutation au Burkina Faso</div>
   <div class="hero-t"><em>Faso</em>Permut</div>
   <div class="hero-s">Trouve rapidement ta permutation entre collègues en 24H.</div>
+  <!-- Compteur en ligne live -->
+  <div id="online-pill" style="display:inline-flex;align-items:center;gap:6px;background:rgba(34,160,94,.18);border:1px solid rgba(79,200,120,.45);color:#9ee9b6;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;margin:6px 0 4px">
+    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4fc878;box-shadow:0 0 0 0 rgba(79,200,120,.7);animation:fpOnlineDot 1.6s infinite"></span>
+    <span id="online-count">—</span> enseignants en ligne
+  </div>
+  <!-- Bannière retour personnalisée (renseignée dynamiquement) -->
+  <div id="welcome-back-banner"></div>
   <div class="stats">
     <div class="sbox"><div class="n" id="stat-annonces">+1300</div><div class="l">Annonces actives</div></div>
     <div class="sbox"><div class="n">17</div><div class="l">Régions</div></div>
@@ -450,6 +494,11 @@ footer b{color:#4fc878}
   </div>
   <button class="btn-p" onclick="checkLoginBeforePublish()">👤 Créer mon annonce — Gratuit</button>
   <button class="btn-s" onclick="go('s3')">🔍 Consulter les annonces</button>
+  <!-- Bouton WhatsApp opt-in : addiction -->
+  <button class="btn-wa-optin" onclick="openWaOptin()">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+    <span>📲 Recevoir mes matchs sur WhatsApp</span>
+  </button>
 
   <!-- TICKER UNIFIÉ -->
   <div class="ann-ticker-wrap" style="width:100%;text-align:left">
@@ -982,6 +1031,12 @@ footer b{color:#4fc878}
   <!-- Déconnexion : gérée par le bouton dans la nav principale -->
   <div id="logout-section" style="display:none"></div>
 
+  <!-- CARTE GAMIFICATION : niveau + streak + parrainage (visible quand connecté) -->
+  <div class="co-card" id="gami-card" style="display:none">
+    <h3 style="margin-bottom:10px">🏆 Mon profil FasoPermut</h3>
+    <div id="gami-content"></div>
+  </div>
+
   <!-- MES ANNONCES (visible quand connecté) -->
   <div class="co-card" id="mes-ann-compte" style="display:none">
     <h3 style="margin-bottom:10px">📋 Mes annonces publiées</h3>
@@ -1084,6 +1139,7 @@ footer b{color:#4fc878}
       <button class="adm-tab-btn" onclick="adminTabSwitch('ann',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">📋 Annonces</button>
       <button class="adm-tab-btn" onclick="adminTabSwitch('match',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">🎯 Matchs</button>
       <button class="adm-tab-btn" onclick="adminTabSwitch('alert',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">⚠️ Alertes</button>
+      <button class="adm-tab-btn" onclick="adminTabSwitch('wa',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">📲 WA</button>
     </div>
 
     <!-- Pane VUE D'ENSEMBLE -->
@@ -1143,6 +1199,18 @@ footer b{color:#4fc878}
     <!-- Pane ALERTES -->
     <div class="adm-pane" id="adm-pane-alert" style="display:none">
       <div id="adm-alert-list"></div>
+    </div>
+
+    <!-- Pane WHATSAPP QUEUE -->
+    <div class="adm-pane" id="adm-pane-wa" style="display:none">
+      <div style="background:#e8f5e9;border-left:3px solid #25d366;padding:10px;border-radius:8px;margin-bottom:10px;font-size:11px;color:#1b5e20">
+        💬 <b>File d'envoi WhatsApp</b> — Clique sur le bouton vert pour ouvrir WhatsApp avec le message déjà écrit. Tu n'as plus qu'à appuyer sur Envoyer. Marque ensuite comme "Envoyé".
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button onclick="loadWaQueue()" style="flex:1;background:#25d366;color:#fff;border:none;padding:8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">🔄 Recharger</button>
+        <button onclick="loadWaSubscribers()" style="flex:1;background:#1976d2;color:#fff;border:none;padding:8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">👥 Voir abonnés</button>
+      </div>
+      <div id="adm-wa-list"><div style="text-align:center;color:var(--txt2);font-size:12px;padding:20px">Clique sur "Recharger" pour voir la file</div></div>
     </div>
 
     <button class="btn-ferm" onclick="cl('o-admin')" style="margin-top:14px">✅ Fermer le panneau</button>
@@ -1242,7 +1310,7 @@ footer b{color:#4fc878}
 
 <script>
 // ===== VERSION =====
-window.APP_VERSION = 'v2026.04.25.1-session-wa';
+window.APP_VERSION = 'v2026.04.25.2-addiction';
 console.log('[FasoPermut] version', window.APP_VERSION);
 
 // ===== PWA : Service Worker =====
@@ -1266,10 +1334,11 @@ async function askPushPermission() {
     if (!('Notification' in window)) return;
     if (Notification.permission === 'granted') { markPushEnabled(true); return; }
     if (Notification.permission === 'denied') return;
-    // Popup doux qui explique avant de déclencher la demande navigateur
-    if (localStorage.getItem('fp_push_asked') === '1') return;
-    localStorage.setItem('fp_push_asked', '1');
-    // Mini bannière d'opt-in
+    // INSISTANCE : si l'utilisateur a cliqué "Plus tard", on attend 1h avant de réafficher
+    var snoozeUntil = parseInt(localStorage.getItem('fp_push_snooze_until') || '0', 10);
+    if (Date.now() < snoozeUntil) return;
+    if (document.getElementById('push-optin-banner')) return; // déjà visible
+    // Mini bannière d'opt-in (revient à chaque visite jusqu'à autorisation)
     var el = document.createElement('div');
     el.id = 'push-optin-banner';
     el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);max-width:420px;width:92%;z-index:991;background:linear-gradient(135deg,#f57c00,#e65100);color:#fff;border-radius:14px;padding:14px;box-shadow:0 8px 24px rgba(245,124,0,.45);animation:fadeInUp .4s ease';
@@ -1277,9 +1346,9 @@ async function askPushPermission() {
       + '<div style="font-size:28px">🔔</div>'
       + '<div style="flex:1">'
         + '<div style="font-size:14px;font-weight:800">Active les notifications FasoPermut</div>'
-        + '<div style="font-size:12px;opacity:.95;margin-top:3px">Sois averti <b>instantanément</b> quand un collègue correspond à ton profil — même site fermé.</div>'
+        + '<div style="font-size:12px;opacity:.95;margin-top:3px">Sois averti <b>instantanément</b> quand un collègue correspond à ton profil — même site fermé. <b>Indispensable pour ne rater aucune permutation.</b></div>'
         + '<div style="display:flex;gap:8px;margin-top:10px">'
-          + '<button id="btn-push-yes" style="flex:1;background:#fff;color:#e65100;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:800;cursor:pointer">✅ Activer</button>'
+          + '<button id="btn-push-yes" style="flex:1;background:#fff;color:#e65100;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:800;cursor:pointer">✅ Activer maintenant</button>'
           + '<button id="btn-push-no" style="background:rgba(0,0,0,.25);color:#fff;border:none;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer">Plus tard</button>'
         + '</div>'
       + '</div>'
@@ -1291,14 +1360,32 @@ async function askPushPermission() {
         var perm = await Notification.requestPermission();
         if (perm === 'granted') {
           markPushEnabled(true);
+          try { localStorage.removeItem('fp_push_snooze_until'); } catch(e2){}
           showToast('🎉 Notifications activées !');
           sendLocalNotif('🎯 FasoPermut', 'Parfait ! Tu recevras les nouveaux matchs ici.', '/');
+        } else if (perm === 'default') {
+          // utilisateur a fermé sans choisir → re-snooze court (5 min) pour ne pas être trop agressif
+          try { localStorage.setItem('fp_push_snooze_until', String(Date.now() + 5*60*1000)); } catch(e2){}
         }
       } catch(e) {}
     };
-    document.getElementById('btn-push-no').onclick = function(){ el.remove(); };
+    document.getElementById('btn-push-no').onclick = function(){
+      el.remove();
+      // Snooze 1h, puis ça revient
+      try { localStorage.setItem('fp_push_snooze_until', String(Date.now() + 60*60*1000)); } catch(e2){}
+    };
   } catch(e) {}
 }
+
+// Re-tente d'afficher la bannière toutes les 90s tant que la permission n'est pas accordée/refusée
+function pushPermissionWatchdog() {
+  try {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'default') return;
+    askPushPermission();
+  } catch(e) {}
+}
+setInterval(pushPermissionWatchdog, 90000);
 
 async function markPushEnabled(v) {
   try {
@@ -1574,16 +1661,42 @@ async function renderWelcomeBackBanner() {
   var n = await getNewMatchesSinceLastVisit();
   // Actualiser last_seen APRÈS avoir compté
   updateLastSeen();
-  if (n <= 0) return;
+  // Rotation de phrases pour varier l'expérience
+  var TITLES_MATCH = [
+    n + ' nouveau(x) enseignant(s) correspondent à ton profil',
+    '🎯 ' + n + ' match' + (n>1?'s':'') + ' frais à découvrir',
+    '🔥 ' + n + ' nouvelle(s) opportunité(s) depuis hier',
+    '⚡ Action requise : ' + n + ' annonce(s) qui pourraient changer ta vie'
+  ];
+  var TITLES_ZERO = [
+    '👋 Bon retour — toujours en chasse de ta permutation ?',
+    '☀️ Salut — pas de match aujourd\'hui mais reste à l\'affût',
+    '🚀 De nouvelles annonces arrivent chaque heure — reste connecté'
+  ];
+  var subText = 'Depuis ta dernière visite — clique pour voir';
+  var titleText, gradient, emoji;
+  if (n > 0) {
+    titleText = TITLES_MATCH[Math.floor(Math.random()*TITLES_MATCH.length)];
+    gradient = 'linear-gradient(135deg,#e53935,#c62828)';
+    emoji = '🔥';
+  } else {
+    titleText = TITLES_ZERO[Math.floor(Math.random()*TITLES_ZERO.length)];
+    subText = 'Continue d\'explorer pour ne rien rater';
+    gradient = 'linear-gradient(135deg,#1976d2,#0d47a1)';
+    emoji = '👀';
+  }
+  // Mention streak si dispo
+  var streak = currentUserData.streak_days || 0;
+  if (streak >= 2) subText += ' · 🔥 ' + streak + ' jours consécutifs';
   var existing = document.getElementById('welcome-back-banner');
   if (existing) existing.remove();
   var ban = document.createElement('div');
   ban.id = 'welcome-back-banner';
-  ban.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);max-width:420px;width:92%;z-index:990;background:linear-gradient(135deg,#e53935,#c62828);color:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 6px 22px rgba(229,57,53,.45);animation:fadeInUp .4s ease;display:flex;align-items:center;gap:10px;cursor:pointer';
-  ban.innerHTML = '<div style="font-size:26px">🔥</div>'
+  ban.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);max-width:420px;width:92%;z-index:990;background:'+gradient+';color:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 6px 22px rgba(0,0,0,.35);animation:fadeInUp .4s ease;display:flex;align-items:center;gap:10px;cursor:pointer';
+  ban.innerHTML = '<div style="font-size:26px">'+emoji+'</div>'
     + '<div style="flex:1">'
-      + '<div style="font-size:13px;font-weight:800">'+n+' nouveau(x) enseignant(s) correspondent à ton profil</div>'
-      + '<div style="font-size:11px;opacity:.9">Depuis ta dernière visite — clique pour voir</div>'
+      + '<div style="font-size:13px;font-weight:800">'+titleText+'</div>'
+      + '<div style="font-size:11px;opacity:.92">'+subText+'</div>'
     + '</div>'
     + '<button onclick="event.stopPropagation();this.parentNode.remove()" style="background:rgba(0,0,0,.2);color:#fff;border:none;width:26px;height:26px;border-radius:50%;font-size:15px;cursor:pointer">×</button>';
   ban.addEventListener('click', function(){
@@ -2107,6 +2220,12 @@ async function publierAnnonce() {
   addAnnToS3(inserted);
   setTimeout(runSmartNotifications, 200);
 
+  // ====== ADDICTION : confettis + matching WhatsApp + points + Pour toi rerender ======
+  try { launchConfetti(180); } catch(e) {}
+  try { triggerWaMatching(inserted); } catch(e) {}
+  try { addPoints(15, 'publish'); } catch(e) {}
+  try { setTimeout(renderPourToi, 500); } catch(e) {}
+
   // Écran pro post-publication (grand panneau récapitulatif)
   showPostPublishPanel(inserted);
 }
@@ -2420,6 +2539,17 @@ function addAnnToS3(a) {
   if(a.provsDest && a.provsDest.length) destStr += (destStr ? ' | ' : '') + a.provsDest.join(', ');
   if(!destStr) destStr = 'Flexible';
 
+  // === BADGES DOPAMINE ===
+  var ageMs = Date.now() - (a.ts || Date.now());
+  var isNew = ageMs < 24 * 3600 * 1000;
+  var isFire = (a.views_count || 0) >= 30;
+  var matchHtml = '';
+  try {
+    if (typeof computeMatchScore === 'function' && isLoggedIn && currentUserData) {
+      var sc = computeMatchScore(a, currentUserData, mesAnnonces);
+      if (sc >= 60) matchHtml = '<span class="ann-match-score'+(sc>=85?' high':'')+'">🎯 '+sc+'%</span>';
+    }
+  } catch(e) {}
   var html = '<div class="ann-card" '
     + 'data-id="'+escH(String(a.id))+'" '
     + 'data-disc="'+escH(a.disc)+'" '
@@ -2434,9 +2564,12 @@ function addAnnToS3(a) {
     +   '<div class="ann-nom-wrap">'
     +     '<div class="ann-avatar">'+initial+'</div>'
     +     '<div><div class="ann-nom">👤 '+escH(a.nom)+'</div>'
-    +     '<span class="ann-grade-badge">'+escH(gradeShort)+'</span></div>'
+    +     '<span class="ann-grade-badge">'+escH(gradeShort)+'</span>'
+    +     (isNew ? '<span class="ann-badge-new">🆕 NOUVEAU</span>' : '')
+    +     (isFire ? '<span class="ann-badge-fire">🔥 EN FEU</span>' : '')
+    +     matchHtml
+    +     '</div>'
     +   '</div>'
-    +   '<span class="match-badge">🆕 Nouveau</span>'
     +   '<span class="date-badge '+cls+'">🕐 '+ago+'</span>'
     + '</div>'
     + '<div class="ann-body">'
@@ -2526,10 +2659,13 @@ function go(id) {
   if (id === 's-co') {
     var section = document.getElementById('mes-ann-compte');
     if(section) section.style.display = isLoggedIn ? 'block' : 'none';
+    var gami = document.getElementById('gami-card');
+    if(gami) gami.style.display = isLoggedIn ? 'block' : 'none';
     // Masquer le formulaire connexion/inscription si déjà connecté
     var coCard = document.querySelector('#s-co .co-card');
     if (coCard) coCard.style.display = isLoggedIn ? 'none' : 'block';
     renderMesAnnoncesCompte();
+    try { renderGamiCard(); } catch(e){}
   }
   if (id === 's2' && isLoggedIn && currentUserData) {
     var fNom = document.getElementById('f-nom');
@@ -2737,7 +2873,17 @@ async function inscrireUser() {
   }
   if (existing) { showToast('⚠️ Ce numéro est déjà inscrit. Connectez-vous.'); return; }
 
-  var userData = { nom: nom, tel: tel, pwd: p1, couleur: couleur, grade: gradeInsc };
+  // Génère un code de parrainage unique pour ce nouvel utilisateur
+  var refCode = '';
+  try { refCode = (Math.random().toString(36).substring(2,5) + tel.slice(-3)).toUpperCase(); } catch(e){}
+  // Récupère le code de parrainage depuis l'URL ?ref=XXX si présent
+  var referredBy = null;
+  try {
+    var refIn = (typeof getQueryParam === 'function') ? getQueryParam('ref') : null;
+    if (refIn) referredBy = String(refIn).toUpperCase();
+    if (!referredBy && localStorage.getItem('fp_ref_code')) referredBy = localStorage.getItem('fp_ref_code');
+  } catch(e){}
+  var userData = { nom: nom, tel: tel, pwd: p1, couleur: couleur, grade: gradeInsc, referral_code: refCode, referred_by: referredBy, points: 10, level: 'Bronze' };
   var ok = await withTimeout(sbCreateUser(userData), 15000, 'create user');
   if (ok && ok.__timeout) {
     showToast('❌ Réseau trop lent. Réessayez. ('+(window._lastSbError||'')+')');
@@ -2753,6 +2899,19 @@ async function inscrireUser() {
   currentUserData = userData;
   saveCurrentUser(userData);
   updateNavBtn();
+
+  // ===== ADDICTION : récompense parrainage + confettis bienvenue =====
+  if (referredBy) {
+    try {
+      var sb = await getSb();
+      if (sb) await sb.rpc('add_user_points', { p_tel: referredBy.length>=8 ? referredBy : '' , p_delta: 30 }).catch(function(){});
+      // Le parrainage par code se résout via Edge function/cron côté admin (filtre par referral_code)
+      // Pour l'instant on garde seulement la trace dans referred_by
+    } catch(e){}
+    try { localStorage.removeItem('fp_ref_code'); } catch(e){}
+  }
+  try { launchConfetti(150); } catch(e){}
+  try { setTimeout(bumpStreakNow, 800); } catch(e){}
 
   showToast('✅ Inscription réussie ! Bienvenue '+nom+' 🎉');
   setTimeout(function(){
@@ -2810,6 +2969,9 @@ async function connecterUser() {
   var section = document.getElementById('mes-ann-compte');
   if(section) section.style.display = 'block';
   renderMesAnnoncesCompte();
+  // Bump streak + réafficher la carte gamification
+  try { setTimeout(bumpStreakNow, 600); } catch(e){}
+  try { setTimeout(renderGamiCard, 800); } catch(e){}
   go('s3');
 }
 
@@ -3215,6 +3377,324 @@ function fpFallbackCopy(txt) {
 }
 
 // ===== INIT PRINCIPALE =====
+// ====================================================================
+// ===== MOTEUR D'ADDICTION FasoPermut v1 =====
+// ====================================================================
+
+// --- WHATSAPP OPT-IN ---
+function openWaOptin() {
+  var bg = document.getElementById('wa-modal-bg'); if (!bg) return;
+  // Pré-remplir si l'utilisateur est connecté
+  try {
+    if (isLoggedIn && currentUserData) {
+      var p = document.getElementById('wa-phone'); if (p && !p.value) p.value = currentUserData.tel || '';
+      var c = document.getElementById('wa-corps');
+      if (c && !c.value && currentUserData.grade) {
+        var g = String(currentUserData.grade).split(/[ (—]/)[0];
+        for (var i=0;i<c.options.length;i++) if (c.options[i].value === g) { c.value = g; break; }
+      }
+    }
+  } catch(e) {}
+  // Peupler les régions une fois (idempotent)
+  try { populateWaRegions(); } catch(e) {}
+  bg.classList.add('show');
+}
+function closeWaOptin() {
+  var bg = document.getElementById('wa-modal-bg'); if (bg) bg.classList.remove('show');
+}
+function populateWaRegions() {
+  ['wa-reg-actuelle','wa-reg-souhaitee'].forEach(function(id){
+    var sel = document.getElementById(id); if (!sel || sel.dataset.populated) return;
+    try {
+      var keys = Object.keys(REGIONS_PROVINCES || {});
+      keys.forEach(function(r){ var o = document.createElement('option'); o.value = r; o.textContent = r; sel.appendChild(o); });
+      sel.dataset.populated = '1';
+    } catch(e) {}
+  });
+}
+async function submitWaOptin() {
+  var phoneEl = document.getElementById('wa-phone');
+  var corpsEl = document.getElementById('wa-corps');
+  var rAct    = document.getElementById('wa-reg-actuelle');
+  var rSouh   = document.getElementById('wa-reg-souhaitee');
+  if (!phoneEl) return;
+  var phone = (phoneEl.value || '').replace(/\D+/g,'');
+  if (phone.length < 8) { showToast('📱 Numéro WhatsApp invalide'); return; }
+  var sb = await getSb(); if (!sb) { showToast('Connexion impossible — réessaie'); return; }
+  try {
+    var payload = {
+      wa_phone: phone,
+      user_tel: (isLoggedIn && currentUserData) ? currentUserData.tel : null,
+      filter_corps: corpsEl && corpsEl.value || null,
+      filter_reg_actuelle: rAct && rAct.value || null,
+      filter_reg_souhaitee: rSouh && rSouh.value || null,
+      is_active: true
+    };
+    var { error } = await sb.from('wa_alerts').insert([payload]);
+    if (error) { console.warn(error); showToast('❌ Erreur — réessaie'); return; }
+    closeWaOptin();
+    showToast('✅ Alertes WhatsApp activées !', true);
+    try { addPoints(5, 'wa_optin'); } catch(e){}
+    // Mini célébration
+    try { launchConfetti(80); } catch(e){}
+  } catch(e) { console.warn(e); showToast('❌ Erreur — réessaie'); }
+}
+
+// --- WHATSAPP MATCHING (à appeler après publication) ---
+async function triggerWaMatching(ann) {
+  try {
+    var sb = await getSb(); if (!sb || !ann) return;
+    // On cherche les alertes actives qui matchent les critères de la nouvelle annonce
+    var corps = (ann.grade || '').split(/[ (—]/)[0];
+    var regActuelle = ann.reg || '';
+    var regsSouhaitees = ann.regs_dest || ann.regsDest || [];
+    var query = sb.from('wa_alerts').select('*').eq('is_active', true);
+    var { data: alerts, error } = await query;
+    if (error || !alerts || !alerts.length) return;
+    var matches = alerts.filter(function(al){
+      // Logique : l'annonce matche l'alerte si chaque filtre actif est OK
+      if (al.filter_corps && al.filter_corps !== corps) return false;
+      // Le abonné cherche un échange : sa "région actuelle" doit être dans les "régions souhaitées" de la nouvelle annonce
+      if (al.filter_reg_actuelle && regsSouhaitees.indexOf(al.filter_reg_actuelle) === -1) return false;
+      // Et la "région souhaitée" du abonné doit être la "région actuelle" de la nouvelle annonce
+      if (al.filter_reg_souhaitee && al.filter_reg_souhaitee !== regActuelle) return false;
+      return true;
+    });
+    if (!matches.length) return;
+    // Construire les messages + lien wa.me + insérer dans wa_queue
+    var siteLink = (typeof FASOPERMUT_SITE !== 'undefined' ? FASOPERMUT_SITE : 'https://fasopermut.com');
+    var deepLink = siteLink + '/?ann=' + ann.id;
+    var rows = matches.map(function(al){
+      var msg = '🎯 *FasoPermut — nouveau match !*\n\n'
+        + '👤 ' + (ann.nom || '') + '\n'
+        + '🎓 ' + (ann.grade || '') + ' · ' + (ann.disc || '') + '\n'
+        + '📍 ' + (ann.reg || '') + ' — ' + (ann.prov || '') + '\n'
+        + '🎯 Cherche : ' + ((ann.regs_dest || ann.regsDest || []).join(', ') || 'Flexible') + '\n\n'
+        + '👉 Voir le profil : ' + deepLink + '\n'
+        + '_Désinscription : réponds STOP_';
+      return {
+        wa_alert_id: al.id,
+        ann_id: ann.id,
+        wa_phone: al.wa_phone,
+        message: msg,
+        wa_link: 'https://wa.me/' + al.wa_phone + '?text=' + encodeURIComponent(msg),
+        status: 'pending'
+      };
+    });
+    await sb.from('wa_queue').insert(rows);
+    console.log('[WA] queued', rows.length, 'messages');
+  } catch(e) { console.warn('[WA matching]', e); }
+}
+
+// --- COMPTEUR EN LIGNE (online_users_count via RPC) ---
+async function updateOnlineCount() {
+  try {
+    var sb = await getSb(); if (!sb) return;
+    var { data, error } = await sb.rpc('online_users_count');
+    var el = document.getElementById('online-count'); if (!el) return;
+    if (error || data === null || data === undefined) {
+      // fallback : count direct
+      var since = new Date(Date.now() - 5*60*1000).toISOString();
+      var { count } = await sb.from('users').select('*', { count: 'exact', head: true }).gte('last_seen', since);
+      el.textContent = String(Math.max(1, count || 1));
+    } else {
+      el.textContent = String(Math.max(1, data));
+    }
+  } catch(e) {}
+}
+
+// --- CONFETTIS DOPAMINE ---
+function launchConfetti(n) {
+  try {
+    n = n || 120;
+    var cont = document.getElementById('fp-confetti-container');
+    if (!cont) {
+      cont = document.createElement('div');
+      cont.id = 'fp-confetti-container';
+      document.body.appendChild(cont);
+    }
+    var colors = ['#22a05e','#4fc878','#f57c00','#1976d2','#e53935','#ffeb3b','#9c27b0'];
+    for (var i = 0; i < n; i++) {
+      var c = document.createElement('div');
+      c.className = 'fp-confetti';
+      c.style.left = (Math.random() * 100) + 'vw';
+      c.style.top = '-' + (Math.random() * 50 + 10) + 'px';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDelay = (Math.random() * 0.4) + 's';
+      c.style.animationDuration = (1.6 + Math.random() * 1.4) + 's';
+      c.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+      cont.appendChild(c);
+      (function(el){ setTimeout(function(){ el.remove(); }, 3500); })(c);
+    }
+  } catch(e) {}
+}
+
+// --- STREAK QUOTIDIEN ---
+async function bumpStreakNow() {
+  try {
+    if (!isLoggedIn || !currentUserData || !currentUserData.tel) return 0;
+    var sb = await getSb(); if (!sb) return 0;
+    var { data, error } = await sb.rpc('bump_streak', { p_tel: currentUserData.tel });
+    if (error) return 0;
+    var streak = data || 0;
+    if (streak > 0) {
+      currentUserData.streak_days = streak;
+      try { saveCurrentUser(currentUserData); } catch(e){}
+      renderStreakBadge(streak);
+    }
+    return streak;
+  } catch(e) { return 0; }
+}
+function renderStreakBadge(n) {
+  if (!n || n < 2) return; // on n'affiche qu'à partir de 2 jours
+  try {
+    var pill = document.getElementById('online-pill');
+    if (!pill) return;
+    if (document.getElementById('fp-streak-pill')) return;
+    var s = document.createElement('span');
+    s.id = 'fp-streak-pill';
+    s.className = 'fp-streak-badge';
+    s.style.marginLeft = '6px';
+    s.innerHTML = '🔥 ' + n + ' jours';
+    s.title = 'Tu visites FasoPermut depuis ' + n + ' jours d\'affilée !';
+    pill.parentNode.insertBefore(s, pill.nextSibling);
+  } catch(e) {}
+}
+
+// --- NIVEAUX + POINTS ---
+function getLevelFromPoints(p) {
+  p = p || 0;
+  if (p >= 500) return { name: 'Diamant', color: '#00bcd4', emoji: '💎', next: null };
+  if (p >= 200) return { name: 'Or',      color: '#ffc107', emoji: '🥇', next: 500 };
+  if (p >= 50)  return { name: 'Argent',  color: '#90a4ae', emoji: '🥈', next: 200 };
+  return                { name: 'Bronze',  color: '#bf6c33', emoji: '🥉', next: 50 };
+}
+async function addPoints(delta, reason) {
+  try {
+    if (!isLoggedIn || !currentUserData || !currentUserData.tel) return;
+    var sb = await getSb(); if (!sb) return;
+    var { data, error } = await sb.rpc('add_user_points', { p_tel: currentUserData.tel, p_delta: delta });
+    if (error || !data || !data.length) return;
+    var info = data[0];
+    var oldLevel = currentUserData.level || 'Bronze';
+    currentUserData.points = info.new_points;
+    currentUserData.level  = info.new_level;
+    try { saveCurrentUser(currentUserData); } catch(e){}
+    if (info.new_level !== oldLevel) {
+      var lvl = getLevelFromPoints(info.new_points);
+      showToast('🎉 Niveau ' + lvl.emoji + ' ' + lvl.name + ' débloqué !', true);
+      try { launchConfetti(160); } catch(e){}
+    }
+  } catch(e) {}
+}
+
+// --- COMPATIBILITY SCORE ---
+function computeMatchScore(ann, user, myAnns) {
+  try {
+    if (!ann || !user) return 0;
+    // On matche le grade (corps), la région actuelle de l'utilisateur (qui doit être dans les souhaits de l'annonce)
+    // et la région souhaitée par l'utilisateur (qui doit être la région actuelle de l'annonce)
+    var corps = (user.grade || '').split(/[ (—]/)[0];
+    var annCorps = (ann.grade || '').split(/[ (—]/)[0];
+    var score = 0;
+    // Match corps : 30 pts
+    if (corps && annCorps && corps === annCorps) score += 30;
+    // Récupère les régions courantes/souhaitées de l'utilisateur via ses propres annonces
+    var userCurrentRegs = [];
+    var userWishRegs = [];
+    if (myAnns && myAnns.length) {
+      myAnns.forEach(function(m){
+        if (m.reg && userCurrentRegs.indexOf(m.reg) === -1) userCurrentRegs.push(m.reg);
+        var dests = m.regs_dest || m.regsDest || [];
+        dests.forEach(function(r){ if (userWishRegs.indexOf(r) === -1) userWishRegs.push(r); });
+      });
+    }
+    // L'annonce souhaite une région où l'utilisateur est = match parfait : 35 pts
+    var annDests = ann.regs_dest || ann.regsDest || [];
+    var matchDir1 = userCurrentRegs.some(function(r){ return annDests.indexOf(r) !== -1; });
+    if (matchDir1) score += 35;
+    // L'utilisateur souhaite une région où l'annonce est = match parfait : 35 pts
+    if (ann.reg && userWishRegs.indexOf(ann.reg) !== -1) score += 35;
+    return Math.min(100, score);
+  } catch(e) { return 0; }
+}
+
+// --- SECTION "POUR TOI" ---
+async function renderPourToi() {
+  if (!isLoggedIn || !currentUserData) return;
+  try {
+    var holder = document.getElementById('pour-toi-holder');
+    if (!holder) return;
+    var sb = await getSb(); if (!sb) return;
+    // Récupère 30 dernières annonces (pas les siennes), score, top 5
+    var { data: anns } = await sb.from('annonces').select('*').neq('tel', currentUserData.tel).order('created_at', { ascending: false }).limit(50);
+    if (!anns || !anns.length) { holder.innerHTML = ''; return; }
+    var scored = anns.map(function(a){
+      a.regsDest = a.regs_dest || [];
+      a.ts = a.created_at ? new Date(a.created_at).getTime() : Date.now();
+      return { ann: a, score: computeMatchScore(a, currentUserData, mesAnnonces) };
+    }).filter(function(x){ return x.score >= 60; }).sort(function(a,b){ return b.score - a.score; }).slice(0, 5);
+    if (!scored.length) { holder.innerHTML = ''; return; }
+    var inner = '<div class="pour-toi-section"><div class="pour-toi-title">🎯 Pour toi — ' + scored.length + ' match' + (scored.length>1?'s':'') + ' personnel' + (scored.length>1?'s':'') + '</div>';
+    inner += '<div style="display:flex;flex-direction:column;gap:6px">';
+    scored.forEach(function(x){
+      var a = x.ann;
+      var regs = (a.regs_dest || []).join(', ') || 'Flexible';
+      inner += '<div onclick="window.location.search=\'?ann='+a.id+'\'" style="background:#fff;border-radius:9px;padding:9px 11px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px">'
+        + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:800;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(a.nom||'Anonyme') + ' · ' + escH((a.grade||'').split(/[ (—]/)[0]) + '</div>'
+        + '<div style="font-size:10px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(a.reg||'') + ' → ' + escH(regs) + '</div></div>'
+        + '<span class="ann-match-score'+(x.score>=85?' high':'')+'" style="margin-left:0">'+x.score+'%</span>'
+        + '</div>';
+    });
+    inner += '</div></div>';
+    holder.innerHTML = inner;
+  } catch(e) { console.warn('[pour-toi]', e); }
+}
+
+// --- NOTIFS VARIÉES (rotation de phrases) ---
+var FP_NOTIF_BANK = {
+  match_perfect: [
+    '🎯 MATCH PARFAIT trouvé pour toi — clique vite !',
+    '💯 Compatibilité 100% avec un nouveau collègue !',
+    '🔥 Un match exact vient d\'arriver — réagis avant les autres'
+  ],
+  match_close: [
+    '🤔 Près d\'un match — vérifie cette annonce',
+    '👀 Une annonce qui pourrait t\'intéresser',
+    '✨ Profil similaire au tien — à vérifier'
+  ],
+  ann_explose: [
+    '📊 Ton annonce explose : nouvelles vues aujourd\'hui',
+    '🔥 Ton annonce est en feu — bouge avant les autres',
+    '⚡ Activité forte sur ton annonce, regarde'
+  ],
+  top_jour: [
+    '🏆 Top 3 annonces du jour — découvre',
+    '🌟 Les annonces les plus regardées maintenant',
+    '🔥 Les permutations les plus chaudes du jour'
+  ],
+  bientot_expir: [
+    '⏰ Une annonce intéressante expire bientôt',
+    '⌛ Ne rate pas cette opportunité de permutation'
+  ],
+  new_inscrit: [
+    '🆕 Nouvel enseignant inscrit dans ta région',
+    '👋 Un nouveau collègue dans ta zone — bienvenue à voir'
+  ],
+  contact_request: [
+    '💬 Quelqu\'un cherche à te contacter',
+    '📲 Un collègue veut entrer en relation'
+  ],
+  badge_unlock: [
+    '🏅 Tu as débloqué un badge — viens le voir',
+    '🎖️ Récompense FasoPermut prête'
+  ]
+};
+function pickNotifPhrase(type) {
+  var arr = FP_NOTIF_BANK[type] || FP_NOTIF_BANK.match_close;
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 async function initApp() {
   buildTicker();
   buildDebloqTicker();
@@ -3264,6 +3744,27 @@ async function initApp() {
 
   // NOUVEAU : Demander permission push (après 8s d'activité, quand l'utilisateur est engagé)
   try { setTimeout(askPushPermission, 8000); } catch(e) {}
+
+  // ======= MOTEUR D'ADDICTION =======
+  // Capture le ?ref=XXX dans l'URL pour stocker le code de parrainage en localStorage (utilisé à l'inscription)
+  try {
+    var ref = (typeof getQueryParam === 'function') ? getQueryParam('ref') : null;
+    if (ref) localStorage.setItem('fp_ref_code', String(ref).toUpperCase());
+  } catch(e) {}
+  // Compteur "X enseignants en ligne"
+  try { updateOnlineCount(); setInterval(updateOnlineCount, 45000); } catch(e) {}
+  // Streak quotidien (incrémente au démarrage si connecté)
+  try { setTimeout(bumpStreakNow, 600); } catch(e) {}
+  // Section "Pour toi" personnalisée (sur l'écran annonces)
+  try { setTimeout(renderPourToi, 1800); } catch(e) {}
+  // Insère un placeholder "pour-toi-holder" en haut de la liste d'annonces si absent
+  try {
+    var lst = document.getElementById('dynamic-ann-list');
+    if (lst && !document.getElementById('pour-toi-holder')) {
+      var ph = document.createElement('div'); ph.id = 'pour-toi-holder';
+      lst.parentNode.insertBefore(ph, lst);
+    }
+  } catch(e) {}
 }
 
 initApp();
@@ -3695,6 +4196,148 @@ function openAdmin() {
   renderAdminPanel();
 }
 
+// ===== ADMIN : VUE WHATSAPP QUEUE =====
+async function loadWaQueue() {
+  var holder = document.getElementById('adm-wa-list');
+  if (!holder) return;
+  holder.innerHTML = '<div style="text-align:center;color:var(--txt2);font-size:12px;padding:14px">⏳ Chargement…</div>';
+  try {
+    var sb = await getSb(); if (!sb) { holder.innerHTML = '<div style="color:#e53935">Erreur de connexion</div>'; return; }
+    var { data, error } = await sb.from('wa_queue').select('*').eq('status', 'pending').order('created_at', { ascending: true }).limit(100);
+    if (error) { holder.innerHTML = '<div style="color:#e53935">Erreur : '+escH(error.message)+'</div>'; return; }
+    if (!data || !data.length) { holder.innerHTML = '<div style="text-align:center;color:var(--txt2);font-size:12px;padding:20px">✅ Aucun message en attente</div>'; return; }
+    var h = '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px"><b>'+data.length+'</b> message(s) en attente d\'envoi</div>';
+    data.forEach(function(q){
+      var when = q.created_at ? new Date(q.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+      var msgEsc = escH(q.message).replace(/\n/g, '<br>');
+      h += '<div style="background:#fff;border:1px solid var(--gris2);border-radius:9px;padding:10px;margin-bottom:8px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+          + '<div style="font-size:11px;font-weight:800;color:var(--bleu)">📲 ' + escH(q.wa_phone) + '</div>'
+          + '<div style="font-size:9px;color:var(--txt2)">' + when + '</div>'
+        + '</div>'
+        + '<div style="font-size:10px;color:var(--txt2);background:var(--gris);padding:6px 8px;border-radius:6px;margin-bottom:6px;line-height:1.4">' + msgEsc + '</div>'
+        + '<div style="display:flex;gap:5px">'
+          + '<a href="' + escH(q.wa_link) + '" target="_blank" onclick="markWaSent('+q.id+')" style="flex:1;background:#25d366;color:#fff;text-decoration:none;text-align:center;padding:8px;border-radius:6px;font-size:11px;font-weight:700">📤 Envoyer via WhatsApp</a>'
+          + '<button onclick="markWaSent('+q.id+')" style="background:#fff;color:var(--bleu);border:1px solid var(--gris2);padding:8px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">✅ Fait</button>'
+          + '<button onclick="markWaSkip('+q.id+')" style="background:#fff;color:#e53935;border:1px solid #ffcdd2;padding:8px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">×</button>'
+        + '</div>'
+        + '</div>';
+    });
+    holder.innerHTML = h;
+  } catch(e) { holder.innerHTML = '<div style="color:#e53935">Erreur : '+escH(e.message||String(e))+'</div>'; }
+}
+async function markWaSent(id) {
+  try {
+    var sb = await getSb(); if (!sb) return;
+    await sb.from('wa_queue').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', id);
+    setTimeout(loadWaQueue, 250);
+  } catch(e) {}
+}
+async function markWaSkip(id) {
+  if (!confirm('Marquer ce message comme ignoré ?')) return;
+  try {
+    var sb = await getSb(); if (!sb) return;
+    await sb.from('wa_queue').update({ status: 'skipped', sent_at: new Date().toISOString() }).eq('id', id);
+    setTimeout(loadWaQueue, 250);
+  } catch(e) {}
+}
+async function loadWaSubscribers() {
+  var holder = document.getElementById('adm-wa-list');
+  if (!holder) return;
+  holder.innerHTML = '<div style="text-align:center;color:var(--txt2);font-size:12px;padding:14px">⏳ Chargement…</div>';
+  try {
+    var sb = await getSb(); if (!sb) return;
+    var { data } = await sb.from('wa_alerts').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(200);
+    if (!data || !data.length) { holder.innerHTML = '<div style="text-align:center;color:var(--txt2);font-size:12px;padding:20px">Aucun abonné WhatsApp pour l\'instant</div>'; return; }
+    var h = '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px"><b>'+data.length+'</b> abonné(s) WhatsApp actif(s)</div>';
+    data.forEach(function(s){
+      h += '<div style="background:#fff;border:1px solid var(--gris2);border-radius:9px;padding:9px;margin-bottom:6px;font-size:11px">'
+        + '<b style="color:var(--vert)">📲 ' + escH(s.wa_phone) + '</b>'
+        + '<div style="color:var(--txt2);font-size:10px;margin-top:3px">'
+          + 'Corps : ' + escH(s.filter_corps || 'Tous') + ' · '
+          + 'Là : ' + escH(s.filter_reg_actuelle || 'Toutes') + ' → '
+          + 'Vers : ' + escH(s.filter_reg_souhaitee || 'Toutes')
+        + '</div></div>';
+    });
+    holder.innerHTML = h;
+  } catch(e) { holder.innerHTML = '<div style="color:#e53935">Erreur</div>'; }
+}
+
+// ===== CARTE GAMIFICATION (compte) =====
+async function renderGamiCard() {
+  if (!isLoggedIn || !currentUserData) return;
+  var holder = document.getElementById('gami-content');
+  if (!holder) return;
+  // Toujours rafraîchir les valeurs depuis la base
+  try {
+    var sb = await getSb();
+    if (sb) {
+      var { data: u } = await sb.from('users').select('points,level,streak_days,referral_code,share_count').eq('tel', currentUserData.tel).maybeSingle();
+      if (u) {
+        currentUserData.points = u.points || 0;
+        currentUserData.level = u.level || 'Bronze';
+        currentUserData.streak_days = u.streak_days || 0;
+        currentUserData.referral_code = u.referral_code || '';
+        currentUserData.share_count = u.share_count || 0;
+        try { saveCurrentUser(currentUserData); } catch(e){}
+      }
+    }
+  } catch(e) {}
+  var pts = currentUserData.points || 0;
+  var lvl = getLevelFromPoints(pts);
+  var streak = currentUserData.streak_days || 0;
+  var code = currentUserData.referral_code || '—';
+  var nextPts = lvl.next || pts;
+  var pct = lvl.next ? Math.min(100, Math.round((pts / lvl.next) * 100)) : 100;
+  var ptsToNext = lvl.next ? Math.max(0, lvl.next - pts) : 0;
+  var refUrl = (typeof FASOPERMUT_SITE !== 'undefined' ? FASOPERMUT_SITE : 'https://fasopermut.com') + '/?ref=' + encodeURIComponent(code);
+  var html = ''
+    + '<div style="display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,'+lvl.color+'22,'+lvl.color+'11);border:2px solid '+lvl.color+';border-radius:12px;padding:12px;margin-bottom:12px">'
+      + '<div style="font-size:36px">'+lvl.emoji+'</div>'
+      + '<div style="flex:1">'
+        + '<div style="font-size:14px;font-weight:800;color:'+lvl.color+'">Niveau '+lvl.name+'</div>'
+        + '<div style="font-size:11px;color:var(--txt2)"><b>'+pts+'</b> points'+(lvl.next?' · '+ptsToNext+' pts pour passer au niveau suivant':' · niveau MAX 🏆')+'</div>'
+        + (lvl.next ? '<div style="background:#e8e8e8;height:6px;border-radius:3px;margin-top:5px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+lvl.color+';transition:width .4s"></div></div>' : '')
+      + '</div>'
+    + '</div>'
+    + (streak >= 1
+        ? '<div style="background:linear-gradient(135deg,#fff3e0,#ffe0b2);border-left:4px solid #f57c00;border-radius:8px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:10px">'
+            + '<div style="font-size:24px">🔥</div>'
+            + '<div><div style="font-size:13px;font-weight:800;color:#e65100">'+streak+' jour'+(streak>1?'s':'')+' consécutif'+(streak>1?'s':'')+'</div>'
+            + '<div style="font-size:10px;color:#bf360c">Reviens demain pour ne pas casser ta série !</div></div>'
+          + '</div>'
+        : '')
+    + '<div style="background:linear-gradient(135deg,#e3f2fd,#bbdefb);border:2px dashed #1976d2;border-radius:10px;padding:12px;margin-bottom:6px">'
+      + '<div style="font-size:11px;font-weight:800;color:#0d47a1;text-transform:uppercase;margin-bottom:6px">🎁 Mon code de parrainage</div>'
+      + '<div style="background:#fff;border-radius:8px;padding:10px;display:flex;justify-content:space-between;align-items:center;gap:8px">'
+        + '<div style="font-size:18px;font-weight:800;letter-spacing:3px;color:var(--bleu)">'+escH(code)+'</div>'
+        + '<button onclick="copyReferralCode(\''+escH(code)+'\')" style="background:var(--bleu);color:#fff;border:none;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">📋 Copier</button>'
+      + '</div>'
+      + '<div style="font-size:10px;color:#0d47a1;margin-top:8px">💡 Partage ton code avec tes collègues. Pour chaque inscrit avec ton code, tu gagnes <b>+30 points</b>.</div>'
+      + '<div style="display:flex;gap:5px;margin-top:8px">'
+        + '<button onclick="shareReferralWA(\''+escH(refUrl)+'\')" style="flex:1;background:#25d366;color:#fff;border:none;padding:9px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">📲 WhatsApp</button>'
+        + '<button onclick="shareReferralCopy(\''+escH(refUrl)+'\')" style="flex:1;background:#fff;color:var(--bleu);border:1.5px solid var(--bleu);padding:9px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">🔗 Copier le lien</button>'
+      + '</div>'
+    + '</div>';
+  holder.innerHTML = html;
+}
+function copyReferralCode(code) {
+  try {
+    if (navigator.clipboard) navigator.clipboard.writeText(code);
+    showToast('✅ Code copié : ' + code);
+  } catch(e) { showToast('Code : ' + code); }
+}
+function shareReferralWA(url) {
+  var msg = '🎓 Salut ! Je suis sur FasoPermut, la plateforme officielle des permutations entre enseignants au Burkina Faso. Inscris-toi avec mon lien et trouve ta permutation rapidement : ' + url;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+function shareReferralCopy(url) {
+  try {
+    if (navigator.clipboard) navigator.clipboard.writeText(url);
+    showToast('✅ Lien de parrainage copié');
+  } catch(e) { showToast('Lien : ' + url); }
+}
+
 async function sbGetAllUsers() {
   var sb = await getSb(); if (!sb) return [];
   try {
@@ -4097,9 +4740,49 @@ function adminTabSwitch(tab, ev) {
       Object.keys(ADM_CACHE.charts).forEach(function(k){ try { ADM_CACHE.charts[k].resize(); } catch(e){} });
     }, 50);
   }
+  // Charge auto de la file WhatsApp
+  if (tab === 'wa') { try { loadWaQueue(); } catch(e){} }
 }
 
 </script>
+
+<!-- Modal WhatsApp opt-in : recevoir alertes WhatsApp -->
+<div class="wa-modal-bg" id="wa-modal-bg" onclick="if(event.target===this)closeWaOptin()">
+  <div class="wa-modal">
+    <button class="wa-modal-close" onclick="closeWaOptin()">×</button>
+    <div class="wa-modal-hdr">
+      <h3>📲 Alertes WhatsApp</h3>
+      <p>Reçois un message WhatsApp dès qu'un collègue correspondant à ton profil publie</p>
+    </div>
+    <div class="wa-modal-body">
+      <div style="background:#e8f5e9;border-left:4px solid #25d366;padding:9px 12px;border-radius:6px;font-size:11px;color:#1b5e20;margin-bottom:6px">
+        ✅ <b>100% gratuit</b> · 🔒 Numéro confidentiel · ⏰ Désinscription en 1 clic
+      </div>
+      <label>Ton numéro WhatsApp *</label>
+      <input type="tel" id="wa-phone" placeholder="70 00 00 00" inputmode="numeric" oninput="filterPhone&&filterPhone(this)">
+      <label>Corps / Grade (filtre, optionnel)</label>
+      <select id="wa-corps">
+        <option value="">— Tous les corps —</option>
+        <option value="PCLC">PCLC — Prof. lycées et collèges</option>
+        <option value="PCCEG">PCCEG — Prof. certifié CEG</option>
+        <option value="PCE">PCE — Prof. certifié des écoles</option>
+        <option value="PE">PE — Professeur des écoles</option>
+        <option value="CPE">CPE — Conseiller principal d'éducation</option>
+        <option value="CE">CE — Conseiller d'éducation</option>
+        <option value="ATE">ATE — Attaché d'éducation</option>
+        <option value="EPE">EPE — Éducateur petite enfance</option>
+        <option value="ECPE">ECPE — Éduc. certifié petite enfance</option>
+        <option value="AISU">AISU — Attaché d'intendance scolaire</option>
+      </select>
+      <label>Région où tu es actuellement (optionnel)</label>
+      <select id="wa-reg-actuelle"><option value="">— Toutes —</option></select>
+      <label>Région que tu veux rejoindre (optionnel)</label>
+      <select id="wa-reg-souhaitee"><option value="">— Toutes —</option></select>
+      <button class="wa-modal-submit" onclick="submitWaOptin()">✅ Activer mes alertes WhatsApp</button>
+      <div style="font-size:10px;color:#888;text-align:center;margin-top:8px">En cliquant tu acceptes que FasoPermut te contacte sur WhatsApp pour les annonces qui correspondent à tes critères.</div>
+    </div>
+  </div>
+</div>
 
 <!-- Bouton WhatsApp flottant clignotant : amène à la chaîne FasoPermut -->
 <a class="fp-wa-float" href="https://whatsapp.com/channel/0029VbCIoQPElagpxG9ZIn0H" target="_blank" rel="noopener" aria-label="Rejoindre la chaîne WhatsApp FasoPermut" title="Rejoindre la chaîne WhatsApp FasoPermut">
