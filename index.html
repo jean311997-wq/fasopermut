@@ -1396,9 +1396,14 @@ setInterval(pushPermissionWatchdog, 90000);
 
 async function markPushEnabled(v) {
   try {
-    if (isLoggedIn && currentUserData) {
+    if (isLoggedIn && currentUserData && currentUserData.pwd) {
       var sb = await getSb(); if (!sb) return;
-      sb.from('users').update({ push_enabled: !!v }).eq('tel', currentUserData.tel).then(function(){});
+      // Passe par RPC SECURITY DEFINER (auth par tel+pwd)
+      sb.rpc('set_push_enabled', {
+        p_tel: currentUserData.tel,
+        p_pwd: currentUserData.pwd,
+        p_enabled: !!v
+      }).then(function(){});
     }
   } catch(e) {}
 }
@@ -1561,12 +1566,21 @@ async function sbUpdateUser(tel, updates) {
   } catch(e) { return false; }
 }
 
-async function sbDeleteUser(tel) {
+async function sbDeleteUser(tel, pwd) {
+  // Sécurisé : passe par RPC delete_my_account qui exige le mot de passe utilisateur
   var sb = await getSb(); if (!sb) return false;
   try {
-    await sb.from('annonces').delete().eq('tel', tel);
-    var { error } = await sb.from('users').delete().eq('tel', tel);
-    return !error;
+    var { data, error } = await sb.rpc('delete_my_account', { p_tel: tel, p_pwd: pwd });
+    return !error && data === true;
+  } catch(e) { return false; }
+}
+
+async function sbAdminBanUser(tel) {
+  // Côté admin : passe par RPC admin_ban_user avec le pwd admin
+  var sb = await getSb(); if (!sb || !ADM_PWD_CACHE) return false;
+  try {
+    var { data, error } = await sb.rpc('admin_ban_user', { p_tel: tel, p_admin_pwd: ADM_PWD_CACHE });
+    return !error && data === true;
   } catch(e) { return false; }
 }
 
@@ -1640,7 +1654,24 @@ async function loadAnnStats(annId) {
 async function updateLastSeen() {
   if (!isLoggedIn || !currentUserData) return;
   var sb = await getSb(); if (!sb) return;
-  try { sb.from('users').update({ last_seen: new Date().toISOString() }).eq('tel', currentUserData.tel).then(function(){}); } catch(e) {}
+  // Passe par RPC SECURITY DEFINER (anon ne peut plus écrire directement dans users)
+  try { sb.rpc('heartbeat', { p_tel: currentUserData.tel }).then(function(){}); } catch(e) {}
+}
+
+// Heartbeat : met à jour last_seen toutes les 60s tant que l'onglet est visible
+// (corrige les 76% d'utilisateurs avec last_seen=NULL)
+var _fpLastSeenInterval = null;
+function startLastSeenHeartbeat() {
+  if (_fpLastSeenInterval) return;
+  // Premier appel immédiat
+  updateLastSeen();
+  _fpLastSeenInterval = setInterval(function(){
+    if (document.visibilityState === 'visible') updateLastSeen();
+  }, 60 * 1000);
+  // Mise à jour aussi quand l'onglet redevient actif
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'visible') updateLastSeen();
+  });
 }
 
 async function getNewMatchesSinceLastVisit() {
@@ -1723,10 +1754,27 @@ async function renderWelcomeBackBanner() {
 }
 
 async function sbDeleteAnnonce(id) {
+  // Sécurisé : utilise RPC delete_my_annonce (vérifie tel + pwd du propriétaire)
   var sb = await getSb(); if (!sb) return false;
+  if (!isLoggedIn || !currentUserData) { showToast('⚠️ Connectez-vous pour supprimer'); return false; }
   try {
-    var { error } = await sb.from('annonces').delete().eq('id', id);
-    return !error;
+    var { data, error } = await sb.rpc('delete_my_annonce', {
+      p_ann_id: parseInt(id, 10),
+      p_tel: currentUserData.tel,
+      p_pwd: currentUserData.pwd
+    });
+    return !error && data === true;
+  } catch(e) { return false; }
+}
+
+async function sbAdminDeleteAnnonce(id) {
+  // Côté admin : RPC admin_delete_annonce
+  var sb = await getSb(); if (!sb || !ADM_PWD_CACHE) return false;
+  try {
+    var { data, error } = await sb.rpc('admin_delete_annonce', {
+      p_ann_id: parseInt(id, 10), p_admin_pwd: ADM_PWD_CACHE
+    });
+    return !error && data === true;
   } catch(e) { return false; }
 }
 
@@ -2846,12 +2894,20 @@ async function resetPassword() {
   }
 
   if(!newPwd || newPwd.length < 4) { showToast('⚠️ Code secret de 4 chiffres requis'); return; }
-  var ok = await sbUpdateUser(tel, { pwd: newPwd });
-  if (ok) {
-    showToast('✅ Code secret mis à jour ! Reconnectez-vous.');
-    showLogin();
-  } else {
-    showToast('❌ Erreur lors de la mise à jour. Réessayez.');
+  // Passe par RPC SECURITY DEFINER reset_password (verifie tel+couleur)
+  var sb = await getSb(); if (!sb) { showToast('❌ Connexion impossible'); return; }
+  try {
+    var { data, error } = await sb.rpc('reset_password', {
+      p_tel: tel, p_couleur: couleur, p_new_pwd: newPwd
+    });
+    if (!error && data === true) {
+      showToast('✅ Code secret mis à jour ! Reconnectez-vous.');
+      showLogin();
+    } else {
+      showToast('❌ Erreur lors de la mise à jour. Réessayez.');
+    }
+  } catch(e) {
+    showToast('❌ Erreur de connexion');
   }
 }
 
@@ -2910,7 +2966,15 @@ async function inscrireUser() {
   var gradeInsc = (document.getElementById('reg-grade')||{value:''}).value;
 
   if (!nom || !tel)   { showToast('⚠️ Remplissez nom et téléphone'); return; }
-  if (!/^\d{8,}$/.test(tel)) { showToast('⚠️ Numéro invalide (8 chiffres min, sans espaces)'); return; }
+  // Validation numéro burkinabè : 8 chiffres, préfixes opérateurs réels
+  // Orange BF : 06, 07, 56, 57, 65, 66, 67, 76, 77, 78
+  // Moov BF : 50, 51, 52, 53, 54, 55, 60, 61, 62, 70, 71, 72, 73, 74, 75
+  // Telecel : 25, 26
+  // On accepte plus large : 0X, 2X, 5X, 6X, 7X (couvre tous les portables BF)
+  if (!/^[02567]\d{7}$/.test(tel)) {
+    showToast('⚠️ Numéro burkinabè invalide (8 chiffres, ex : 70 00 00 00)');
+    return;
+  }
   if (!p1)            { showToast('⚠️ Entrez un code secret'); return; }
   if (!couleur)       { showToast('⚠️ Entrez votre couleur préférée'); return; }
   if (p1 !== p2)      { showToast('❌ Les codes secrets ne correspondent pas'); return; }
@@ -2957,6 +3021,8 @@ async function inscrireUser() {
   currentUserData = userData;
   saveCurrentUser(userData);
   updateNavBtn();
+  // Démarre immédiatement le heartbeat (l'utilisateur compte comme actif)
+  try { startLastSeenHeartbeat(); } catch(e){}
 
   // ===== ADDICTION : récompense parrainage + confettis bienvenue =====
   if (referredBy) {
@@ -2972,22 +3038,91 @@ async function inscrireUser() {
   try { setTimeout(bumpStreakNow, 800); } catch(e){}
 
   showToast('Inscription réussie. Bienvenue '+nom);
+  // Pré-remplir le formulaire publication AU CAS où l'utilisateur clique "Publier"
   setTimeout(function(){
-    go('s2'); nav(document.querySelectorAll('.bni')[2]);
     var fNom = document.getElementById('f-nom');
     var fTel = document.getElementById('f-tel');
     if (fNom && !fNom.value) fNom.value = nom;
     if (fTel && !fTel.value) fTel.value = tel;
-    goFormStep(1);
     var fGrade = document.getElementById('f-grade');
     if (fGrade && gradeInsc) { fGrade.value = gradeInsc; autoFillDisc(gradeInsc); }
-  }, 800);
+  }, 100);
+  // NOUVEAU PARCOURS POST-INSCRIPTION (au lieu de sauter direct au formulaire 4 étapes)
+  // On affiche un écran d'accueil chaleureux avec 3 choix clairs
+  setTimeout(function(){ showWelcomeScreen(nom); }, 1000);
   } catch(err) {
     console.error('inscrireUser exception:', err);
     showToast('❌ Erreur inattendue : '+(err && err.message ? err.message : err));
   } finally {
     _inscriptionEnCours = false;
     if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+  }
+}
+
+// ===== ÉCRAN DE BIENVENUE POST-INSCRIPTION (réduit le 76% qui ne reviennent jamais) =====
+async function showWelcomeScreen(prenom) {
+  // Compter le nombre d'annonces dans la région du nouvel inscrit pour personnaliser
+  var nbAnn = 0, nbReg = 0;
+  try {
+    var sb = await getSb();
+    if (sb) {
+      var { count } = await sb.from('annonces').select('*', { count: 'exact', head: true });
+      nbAnn = count || 0;
+    }
+  } catch(e){}
+  // Construire la modale
+  var existing = document.getElementById('fp-welcome-modal');
+  if (existing) existing.remove();
+  var el = document.createElement('div');
+  el.id = 'fp-welcome-modal';
+  el.style.cssText = 'position:fixed;inset:0;background:rgba(15,35,71,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px;animation:fadeInUp .4s ease';
+  el.innerHTML = '<div style="background:#fff;max-width:420px;width:100%;border-radius:18px;padding:22px 18px;box-shadow:0 12px 40px rgba(0,0,0,.4);max-height:90vh;overflow-y:auto">'
+    + '<div style="font-size:42px;text-align:center;margin-bottom:6px">🎉</div>'
+    + '<div style="font-size:22px;font-weight:900;color:#0f2347;text-align:center;margin-bottom:4px">Bienvenue '+escH(prenom||'')+' !</div>'
+    + '<div style="font-size:13px;color:#5a6b7a;text-align:center;margin-bottom:16px">Tu fais maintenant partie de la communauté FasoPermut.</div>'
+    + (nbAnn > 0 ? '<div style="background:#e6f5ee;border-left:3px solid #22a05e;padding:10px 12px;border-radius:8px;font-size:12px;color:#0a5f33;margin-bottom:16px">📊 <b>'+nbAnn+' annonces actives</b> attendent peut-être un match avec ton profil.</div>' : '')
+    + '<div style="font-size:13px;font-weight:700;color:#0f2347;margin-bottom:10px">Que veux-tu faire maintenant ?</div>'
+    + '<button onclick="welcomeAction(\'publier\')" style="display:block;width:100%;background:linear-gradient(135deg,#22a05e,#1a7a4a);color:#fff;border:none;padding:14px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:9px;box-shadow:0 4px 14px rgba(34,160,94,.3)">📝 Publier mon annonce de permutation</button>'
+    + '<button onclick="welcomeAction(\'consulter\')" style="display:block;width:100%;background:#fff;color:#1a2f5a;border:2px solid #1a2f5a;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:9px">🔍 Voir les annonces existantes</button>'
+    + '<button onclick="welcomeAction(\'inviter\')" style="display:block;width:100%;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border:none;padding:13px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px">👥 Inviter mes collègues (gagne des points)</button>'
+    + '<div style="text-align:center;font-size:11px;color:#8a98a8">Tu peux fermer cet écran et naviguer librement.</div>'
+    + '<button onclick="welcomeAction(\'close\')" style="display:block;width:100%;background:transparent;color:#8a98a8;border:none;padding:8px;font-size:12px;cursor:pointer;margin-top:6px;text-decoration:underline">Plus tard</button>'
+    + '</div>';
+  document.body.appendChild(el);
+}
+
+function welcomeAction(action) {
+  var modal = document.getElementById('fp-welcome-modal');
+  if (modal) modal.remove();
+  if (action === 'publier') {
+    go('s2'); var btns = document.querySelectorAll('.bni'); if (btns[2]) nav(btns[2]);
+    if (typeof goFormStep === 'function') goFormStep(1);
+  } else if (action === 'consulter') {
+    go('s3'); var btns2 = document.querySelectorAll('.bni'); if (btns2[1]) nav(btns2[1]);
+    if (typeof refreshAnnonces === 'function') refreshAnnonces();
+  } else if (action === 'inviter') {
+    // Partage du lien de parrainage
+    var refCode = (currentUserData && currentUserData.referral_code) ? currentUserData.referral_code : '';
+    var url = location.origin + (refCode ? '/?ref=' + encodeURIComponent(refCode) : '/');
+    var txt = '🇧🇫 Salut ! Je viens de m\'inscrire sur FasoPermut, la plateforme officielle de permutation entre enseignants au Burkina Faso.\n\n' +
+              'C\'est gratuit et ça permet de trouver un collègue pour permuter automatiquement, dans les 17 régions et tous les corps.\n\n' +
+              '👉 ' + url + '\n\nFais passer à 3 collègues, plus on est nombreux, plus c\'est efficace.';
+    if (navigator.share) {
+      navigator.share({ title: 'FasoPermut', text: txt, url: url }).catch(function(){});
+    } else {
+      window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+    }
+    // Bonus : 5 points pour avoir partagé
+    try {
+      if (currentUserData && currentUserData.tel) {
+        getSb().then(function(sb){ if (sb) sb.rpc('add_user_points', { p_tel: currentUserData.tel, p_delta: 5 }); });
+      }
+    } catch(e){}
+    showToast('💚 Merci ! +5 points pour le partage');
+    setTimeout(function(){ go('s3'); }, 600);
+  } else {
+    // 'close' ou 'Plus tard' → laisser sur l'accueil
+    go('s1'); var btns3 = document.querySelectorAll('.bni'); if (btns3[0]) nav(btns3[0]);
   }
 }
 
@@ -3407,28 +3542,38 @@ function shareAnnonce(nom, grade, disc, reg, prov, opts) {
 }
 
 function shareToWhatsApp(nom, grade, disc, reg, prov, opts) {
+  opts = opts || {};
   var txt = shareAnnonce(nom, grade, disc, reg, prov, opts);
   window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+  if (opts.id && typeof incrementShareCount === 'function') incrementShareCount(opts.id);
+  bumpShareChallenge && bumpShareChallenge();
 }
 function shareToFacebook(nom, grade, disc, reg, prov, opts) {
   opts = opts || {};
   var url = annDeepLink(opts.id || '');
   var txt = shareAnnonce(nom, grade, disc, reg, prov, opts);
   window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url) + '&quote=' + encodeURIComponent(txt), '_blank');
+  if (opts.id && typeof incrementShareCount === 'function') incrementShareCount(opts.id);
+  bumpShareChallenge && bumpShareChallenge();
 }
 function shareToTelegram(nom, grade, disc, reg, prov, opts) {
   opts = opts || {};
   var url = annDeepLink(opts.id || '');
   var txt = shareAnnonce(nom, grade, disc, reg, prov, opts);
   window.open('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(txt), '_blank');
+  if (opts.id && typeof incrementShareCount === 'function') incrementShareCount(opts.id);
+  bumpShareChallenge && bumpShareChallenge();
 }
 function copyShareText(nom, grade, disc, reg, prov, opts) {
+  opts = opts || {};
   var txt = shareAnnonce(nom, grade, disc, reg, prov, opts);
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(txt).then(function(){
       showToast('✅ Texte copié — colle-le où tu veux !');
     }).catch(function(){ fpFallbackCopy(txt); });
   } else { fpFallbackCopy(txt); }
+  if (opts.id && typeof incrementShareCount === 'function') incrementShareCount(opts.id);
+  bumpShareChallenge && bumpShareChallenge();
 }
 function fpFallbackCopy(txt) {
   try {
@@ -3848,6 +3993,11 @@ async function initApp() {
   buildDebloqTicker();
   renderFreeBanner();
   updateDebloquerButtons();
+
+  // Démarre le heartbeat last_seen (corrige les 76% jamais revenus en base)
+  if (isLoggedIn && currentUserData) {
+    try { startLastSeenHeartbeat(); } catch(e){}
+  }
 
   // Charger toutes les annonces depuis Supabase
   var container = document.getElementById('dynamic-ann-list');
@@ -4360,15 +4510,22 @@ function clearNotifBadge() {
 }
 
 // ===== DASHBOARD ADMIN =====
-var ADMIN_PWD = 'admin2026'; // Changer ce mot de passe !
+// Sécurité : mot de passe admin vérifié côté serveur via RPC check_admin (SECURITY DEFINER)
+// Plus aucun secret en clair dans le HTML.
 var ADM_CACHE = { users: [], annonces: [], charts: {} };
-var FREE_END = new Date('2026-04-28T23:59:59');
+var ADM_PWD_CACHE = null; // mémorise le pwd valide pour la session
 
-function openAdmin() {
+async function openAdmin() {
   var pwd = prompt('🔐 Mot de passe administrateur :');
-  if (pwd !== ADMIN_PWD) { showToast('❌ Accès refusé'); return; }
-  document.getElementById('o-admin').classList.add('on');
-  renderAdminPanel();
+  if (!pwd) return;
+  try {
+    var sb = await getSb(); if (!sb) { showToast('❌ Connexion impossible'); return; }
+    var { data, error } = await sb.rpc('check_admin', { p_pwd: pwd });
+    if (error || data !== true) { showToast('❌ Accès refusé'); return; }
+    ADM_PWD_CACHE = pwd;
+    document.getElementById('o-admin').classList.add('on');
+    renderAdminPanel();
+  } catch(e) { showToast('❌ Erreur authentification'); }
 }
 
 // ===== ADMIN : VUE WHATSAPP QUEUE =====
@@ -4857,180 +5014,4 @@ function adminRenderAlerts(users, annonces) {
   var now = Date.now();
   // 1. Fin période gratuite
   var daysLeft = Math.ceil((FREE_END.getTime() - now) / (1000*60*60*24));
-  if (daysLeft > 0) alerts.push({ type:'info', icon:'⏰', msg:'Période gratuite : fin dans '+daysLeft+' jour(s) (28 avril 2026)' });
-  else alerts.push({ type:'ok', icon:'💰', msg:'Période payante active (300 FCFA par contact)' });
-
-  // 2. Users avec +3 annonces
-  var countByTel = {};
-  annonces.forEach(function(a){ countByTel[a.tel] = (countByTel[a.tel]||0)+1; });
-  Object.keys(countByTel).forEach(function(tel){
-    if (countByTel[tel] > 3) {
-      var u = users.find(function(x){ return x.tel === tel; });
-      alerts.push({ type:'warn', icon:'⚠️', msg:(u?u.nom:tel)+' a '+countByTel[tel]+' annonces (max = 3)' });
-    }
-  });
-
-  // 3. Téléphones dupliqués côté users
-  var telUsers = {};
-  users.forEach(function(u){ telUsers[u.tel] = (telUsers[u.tel]||0)+1; });
-  Object.keys(telUsers).forEach(function(tel){
-    if (telUsers[tel] > 1) alerts.push({ type:'danger', icon:'🚨', msg:'Numéro dupliqué ('+telUsers[tel]+' comptes) : '+tel });
-  });
-
-  // 4. Annonces vieilles de +7j
-  var d7 = 7*24*60*60*1000;
-  var oldAnn = annonces.filter(function(a){ return a.created_at && (now - new Date(a.created_at).getTime()) > d7; });
-  if (oldAnn.length) alerts.push({ type:'info', icon:'📉', msg:oldAnn.length+' annonce(s) publiée(s) il y a plus de 7 jours' });
-
-  // 5. Aucun utilisateur / annonce
-  if (!users.length) alerts.push({ type:'info', icon:'ℹ️', msg:'Aucun utilisateur inscrit pour le moment.' });
-  if (!annonces.length) alerts.push({ type:'info', icon:'ℹ️', msg:'Aucune annonce publiée pour le moment.' });
-
-  if (!alerts.length) alerts.push({ type:'ok', icon:'✅', msg:'Tout va bien, aucune alerte à signaler.' });
-
-  var colors = {
-    info: { bg:'#e3f2fd', border:'#1565c0', txt:'#0d47a1' },
-    warn: { bg:'#fff3e0', border:'#f57c00', txt:'#e65100' },
-    danger: { bg:'#ffebee', border:'#c62828', txt:'#b71c1c' },
-    ok: { bg:'#e8f5e9', border:'#2e7d32', txt:'#1b5e20' }
-  };
-  var el = document.getElementById('adm-alert-list');
-  if (!el) return;
-  el.innerHTML = alerts.map(function(a){
-    var c = colors[a.type] || colors.info;
-    return '<div style="background:'+c.bg+';border-left:4px solid '+c.border+';padding:10px;border-radius:8px;margin-bottom:6px;font-size:12px;color:'+c.txt+'">'
-      + '<span style="font-size:16px;margin-right:6px">'+a.icon+'</span>'+escH(a.msg)
-      + '</div>';
-  }).join('');
-}
-
-function adminExportCSV(type) {
-  var data, filename, headers, rows;
-  if (type === 'users') {
-    data = ADM_CACHE.users || [];
-    filename = 'fasopermut-users-'+new Date().toISOString().slice(0,10)+'.csv';
-    headers = ['nom','tel','grade','couleur','created_at'];
-  } else {
-    data = ADM_CACHE.annonces || [];
-    filename = 'fasopermut-annonces-'+new Date().toISOString().slice(0,10)+'.csv';
-    headers = ['id','nom','tel','grade','disc','reg','prov','etab','regs_dest','provs_dest','created_at'];
-  }
-  if (!data.length) { showToast('Aucune donnée à exporter'); return; }
-  rows = [headers.join(',')];
-  data.forEach(function(row){
-    rows.push(headers.map(function(h){
-      var v = row[h];
-      if (Array.isArray(v)) v = v.join('|');
-      if (v === null || v === undefined) v = '';
-      v = String(v).replace(/"/g,'""');
-      if (/[,"\n]/.test(v)) v = '"'+v+'"';
-      return v;
-    }).join(','));
-  });
-  var blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8'});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('✅ Export CSV téléchargé');
-}
-
-async function adminBanUser(tel) {
-  if (!confirm('Bannir et supprimer l\'utilisateur '+tel+' et toutes ses annonces ?')) return;
-  var ok = await sbDeleteUser(tel);
-  if (ok) {
-    document.querySelectorAll('.ann-card').forEach(function(c){
-      if ((c.dataset.tel||'') === tel) c.remove();
-    });
-    if (typeof filterAnn === 'function') filterAnn();
-    showToast('✅ Utilisateur banni et supprimé.');
-    renderAdminPanel();
-  } else {
-    showToast('❌ Erreur lors de la suppression.');
-  }
-}
-
-async function adminDeleteAnnById(id) {
-  if (!confirm('Supprimer cette annonce ?')) return;
-  var ok = await sbDeleteAnnonce(id);
-  if (ok) {
-    var card = document.querySelector('.ann-card[data-id="'+id+'"]');
-    if (card) { card.remove(); if (typeof filterAnn === 'function') filterAnn(); }
-    showToast('✅ Annonce supprimée.');
-    renderAdminPanel();
-  } else {
-    showToast('❌ Erreur lors de la suppression.');
-  }
-}
-
-function adminDeleteAnn(btn) {
-  var row = btn.closest('div[style*="display:flex"]');
-  if (!row) return;
-  var match = btn.getAttribute('onclick').match(/adminDeleteAnnById\((\d+)\)/);
-  if (match) adminDeleteAnnById(parseInt(match[1]));
-}
-
-function adminTabSwitch(tab, ev) {
-  document.querySelectorAll('.adm-tab-btn').forEach(function(b){
-    b.classList.remove('active');
-    b.style.background = 'none';
-    b.style.color = 'var(--txt2)';
-    b.style.fontWeight = '600';
-    b.style.boxShadow = 'none';
-  });
-  document.querySelectorAll('.adm-pane').forEach(function(p){ p.style.display='none'; });
-  var target = ev && ev.target ? ev.target : null;
-  if (target) {
-    target.classList.add('active');
-    target.style.background = '#fff';
-    target.style.color = 'var(--bleu)';
-    target.style.fontWeight = '700';
-    target.style.boxShadow = '0 1px 4px rgba(0,0,0,.1)';
-  }
-  var pane = document.getElementById('adm-pane-'+tab);
-  if (pane) pane.style.display = 'block';
-  // Forcer resize des charts quand on ouvre la vue
-  if (tab === 'vue') {
-    setTimeout(function(){
-      Object.keys(ADM_CACHE.charts).forEach(function(k){ try { ADM_CACHE.charts[k].resize(); } catch(e){} });
-    }, 50);
-  }
-  // Charge auto de la file WhatsApp
-  if (tab === 'wa') { try { loadWaQueue(); } catch(e){} }
-}
-
-</script>
-
-<!-- Modal WhatsApp opt-in : recevoir alertes WhatsApp -->
-<div class="wa-modal-bg" id="wa-modal-bg" onclick="if(event.target===this)closeWaOptin()">
-  <div class="wa-modal">
-    <button class="wa-modal-close" onclick="closeWaOptin()">×</button>
-    <div class="wa-modal-hdr">
-      <h3>📲 Alertes WhatsApp</h3>
-      <p>Reçois un message WhatsApp dès qu'un collègue correspondant à ton profil publie</p>
-    </div>
-    <div class="wa-modal-body">
-      <div style="background:#e8f5e9;border-left:4px solid #25d366;padding:9px 12px;border-radius:6px;font-size:11px;color:#1b5e20;margin-bottom:10px">
-        <b>100% gratuit</b> · Numéro confidentiel · Désinscription en 1 clic
-      </div>
-      <div style="font-size:12px;color:#444;margin-bottom:8px;line-height:1.5">
-        Recevois directement sur WhatsApp les permutations qui te correspondent, les annonces dans des zones proches, les actualités du ministère et les informations FasoPermut.
-      </div>
-      <label>Ton numéro WhatsApp *</label>
-      <input type="tel" id="wa-phone" placeholder="70 00 00 00" inputmode="numeric" oninput="filterPhone&&filterPhone(this)">
-      <div id="wa-already-info" style="display:none;font-size:11px;color:#1976d2;margin-top:6px;font-style:italic">Le système utilisera ton profil enseignant déjà enregistré pour cibler les permutations qui te concernent.</div>
-      <button class="wa-modal-submit" onclick="submitWaOptin()">Activer mes alertes WhatsApp</button>
-      <div style="font-size:10px;color:#888;text-align:center;margin-top:8px">En cliquant tu acceptes que FasoPermut te contacte sur WhatsApp pour les permutations et informations utiles.</div>
-    </div>
-  </div>
-</div>
-
-<!-- Bouton WhatsApp flottant clignotant : amène à la chaîne FasoPermut -->
-<a class="fp-wa-float" href="https://whatsapp.com/channel/0029VbCIoQPElagpxG9ZIn0H" target="_blank" rel="noopener" aria-label="Rejoindre la chaîne WhatsApp FasoPermut" title="Rejoindre la chaîne WhatsApp FasoPermut">
-  <span class="fp-wa-float-lbl">Rejoindre la chaîne</span>
-  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-</a>
-</body>
-</html>
+  if (daysLeft > 0) alerts.push({ type:'info', icon:'⏰', msg:'Période gratui
