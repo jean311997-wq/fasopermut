@@ -640,9 +640,9 @@ footer b{color:#4fc878}
         <option value="">— Choisir une région —</option>
         <option>Bankui (ex Boucle du Mouhoun)</option><option>Tannounyan (ex Cascades)</option><option>Kadiogo (ex Centre)</option>
         <option>Nakambé (ex Centre-Est)</option><option>Kuilsé (ex Centre-Nord)</option><option>Nando (ex Centre-Ouest)</option>
-        <option>Nazinon (ex Centre-Sud)</option><option>Goulmou (ex Est)</option><option>Guiriko (ex Hauts-Bassins)</option>
-        <option>Yaadga (ex Nord)</option><option>Liptako (ex Sahel)</option><option>Djôrô (ex Sud-Ouest)</option>
-        <option>Soum</option><option>Sirba</option><option>Tapoa</option>
+        <option>Nazinon (ex Centre-Sud)</option><option>Oubri (ex Plateau Central)</option><option>Goulmou (ex Est)</option>
+        <option>Guiriko (ex Hauts-Bassins)</option><option>Yaadga (ex Nord)</option><option>Liptako (ex Sahel)</option>
+        <option>Djôrô (ex Sud-Ouest)</option><option>Soum</option><option>Sirba</option><option>Tapoa</option>
       </select>
     </div>
     <div class="fi"><label>Province *</label>
@@ -677,6 +677,7 @@ footer b{color:#4fc878}
         <option value="Kuilsé">Kuilsé (ex Centre-Nord)</option>
         <option value="Nando">Nando (ex Centre-Ouest)</option>
         <option value="Nazinon">Nazinon (ex Centre-Sud)</option>
+        <option value="Oubri">Oubri (ex Plateau Central)</option>
         <option value="Goulmou">Goulmou (ex Est)</option>
         <option value="Guiriko">Guiriko (ex Hauts-Bassins)</option>
         <option value="Yaadga">Yaadga (ex Nord)</option>
@@ -778,9 +779,9 @@ footer b{color:#4fc878}
         <option value="">Toutes les régions</option>
         <option>Bankui (ex Boucle du Mouhoun)</option><option>Tannounyan (ex Cascades)</option><option>Kadiogo (ex Centre)</option>
         <option>Nakambé (ex Centre-Est)</option><option>Kuilsé (ex Centre-Nord)</option><option>Nando (ex Centre-Ouest)</option>
-        <option>Nazinon (ex Centre-Sud)</option><option>Goulmou (ex Est)</option><option>Guiriko (ex Hauts-Bassins)</option>
-        <option>Yaadga (ex Nord)</option><option>Liptako (ex Sahel)</option><option>Djôrô (ex Sud-Ouest)</option>
-        <option>Soum</option><option>Sirba</option><option>Tapoa</option>
+        <option>Nazinon (ex Centre-Sud)</option><option>Oubri (ex Plateau Central)</option><option>Goulmou (ex Est)</option>
+        <option>Guiriko (ex Hauts-Bassins)</option><option>Yaadga (ex Nord)</option><option>Liptako (ex Sahel)</option>
+        <option>Djôrô (ex Sud-Ouest)</option><option>Soum</option><option>Sirba</option><option>Tapoa</option>
       </select>
       <select id="f-prov" onchange="filterAnn()">
         <option value="">Toutes les provinces</option>
@@ -1872,7 +1873,8 @@ var REGIONS_PROVINCES = {
   "Nakambé":    ["Boulgou","Koulpélogo","Kouritenga"],
   "Kuilsé":     ["Bam","Namentenga","Sandbondtenga"],
   "Nando":      ["Boulkiemdé","Sanguié","Ziro"],
-  "Nazinon":    ["Bazèga","Nahouri","Zoundwéogo","Ganzourgou"],
+  "Nazinon":    ["Bazèga","Nahouri","Zoundwéogo"],
+  "Oubri":      ["Ganzourgou","Kourwéogo","Oubritenga"],
   "Goulmou":    ["Gourma","Komandjoari","Kompienga","Gnagna","Tapoa"],
   "Guiriko":    ["Kénédougou","Tuy","Houet"],
   "Yaadga":     ["Loroum","Passoré","Yatenga","Zondoma"],
@@ -4341,11 +4343,12 @@ function showLegal(type) {
 // ===== MATCHING INTELLIGENT =====
 // Table de proximité régionale (régions considérées comme "proches" entre elles)
 var REGIONS_PROCHES = {
-  "Kadiogo":    ["Nazinon","Nakambé","Kuilsé","Nando"],
-  "Nakambé":    ["Kadiogo","Nazinon","Goulmou"],
-  "Kuilsé":     ["Kadiogo","Yaadga","Liptako","Soum"],
-  "Nando":      ["Kadiogo","Nazinon","Bankui"],
-  "Nazinon":    ["Kadiogo","Nakambé","Nando"],
+  "Kadiogo":    ["Oubri","Nazinon","Nakambé","Kuilsé","Nando"],
+  "Nakambé":    ["Kadiogo","Oubri","Nazinon","Goulmou"],
+  "Kuilsé":     ["Kadiogo","Oubri","Yaadga","Liptako","Soum"],
+  "Nando":      ["Kadiogo","Oubri","Nazinon","Bankui"],
+  "Nazinon":    ["Kadiogo","Oubri","Nakambé","Nando"],
+  "Oubri":      ["Kadiogo","Nazinon","Nakambé","Kuilsé","Nando"],
   "Guiriko":    ["Tannounyan","Bankui","Djôrô"],
   "Tannounyan": ["Guiriko","Djôrô"],
   "Bankui":     ["Guiriko","Yaadga","Nando"],
@@ -5005,189 +5008,4 @@ function adminRenderMatchs(matchs) {
       + '<div style="background:var(--vert3);padding:6px;border-radius:6px"><b>'+escH(m.a.nom)+'</b> ['+escH(m.a.grade)+']<br>📞 '+escH(m.a.tel)+'<br>📍 '+escH(m.a.reg)+'</div>'
       + '<div style="font-size:16px;color:var(--orange)">⇄</div>'
       + '<div style="background:#e3f2fd;padding:6px;border-radius:6px"><b>'+escH(m.b.nom)+'</b> ['+escH(m.b.grade)+']<br>📞 '+escH(m.b.tel)+'<br>📍 '+escH(m.b.reg)+'</div>'
-      + '</div></div>';
-  }).join('');
-}
-
-function adminRenderAlerts(users, annonces) {
-  var alerts = [];
-  var now = Date.now();
-  // 1. Fin période gratuite
-  var daysLeft = Math.ceil((FREE_END.getTime() - now) / (1000*60*60*24));
-  if (daysLeft > 0) alerts.push({ type:'info', icon:'⏰', msg:'Période gratuite : fin dans '+daysLeft+' jour(s) (28 avril 2026)' });
-  else alerts.push({ type:'ok', icon:'💰', msg:'Période payante active (300 FCFA par contact)' });
-
-  // 2. Users avec +3 annonces
-  var countByTel = {};
-  annonces.forEach(function(a){ countByTel[a.tel] = (countByTel[a.tel]||0)+1; });
-  Object.keys(countByTel).forEach(function(tel){
-    if (countByTel[tel] > 3) {
-      var u = users.find(function(x){ return x.tel === tel; });
-      alerts.push({ type:'warn', icon:'⚠️', msg:(u?u.nom:tel)+' a '+countByTel[tel]+' annonces (max = 3)' });
-    }
-  });
-
-  // 3. Téléphones dupliqués côté users
-  var telUsers = {};
-  users.forEach(function(u){ telUsers[u.tel] = (telUsers[u.tel]||0)+1; });
-  Object.keys(telUsers).forEach(function(tel){
-    if (telUsers[tel] > 1) alerts.push({ type:'danger', icon:'🚨', msg:'Numéro dupliqué ('+telUsers[tel]+' comptes) : '+tel });
-  });
-
-  // 4. Annonces vieilles de +7j
-  var d7 = 7*24*60*60*1000;
-  var oldAnn = annonces.filter(function(a){ return a.created_at && (now - new Date(a.created_at).getTime()) > d7; });
-  if (oldAnn.length) alerts.push({ type:'info', icon:'📉', msg:oldAnn.length+' annonce(s) publiée(s) il y a plus de 7 jours' });
-
-  // 5. Aucun utilisateur / annonce
-  if (!users.length) alerts.push({ type:'info', icon:'ℹ️', msg:'Aucun utilisateur inscrit pour le moment.' });
-  if (!annonces.length) alerts.push({ type:'info', icon:'ℹ️', msg:'Aucune annonce publiée pour le moment.' });
-
-  if (!alerts.length) alerts.push({ type:'ok', icon:'✅', msg:'Tout va bien, aucune alerte à signaler.' });
-
-  var colors = {
-    info: { bg:'#e3f2fd', border:'#1565c0', txt:'#0d47a1' },
-    warn: { bg:'#fff3e0', border:'#f57c00', txt:'#e65100' },
-    danger: { bg:'#ffebee', border:'#c62828', txt:'#b71c1c' },
-    ok: { bg:'#e8f5e9', border:'#2e7d32', txt:'#1b5e20' }
-  };
-  var el = document.getElementById('adm-alert-list');
-  if (!el) return;
-  el.innerHTML = alerts.map(function(a){
-    var c = colors[a.type] || colors.info;
-    return '<div style="background:'+c.bg+';border-left:4px solid '+c.border+';padding:10px;border-radius:8px;margin-bottom:6px;font-size:12px;color:'+c.txt+'">'
-      + '<span style="font-size:16px;margin-right:6px">'+a.icon+'</span>'+escH(a.msg)
-      + '</div>';
-  }).join('');
-}
-
-function adminExportCSV(type) {
-  var data, filename, headers, rows;
-  if (type === 'users') {
-    data = ADM_CACHE.users || [];
-    filename = 'fasopermut-users-'+new Date().toISOString().slice(0,10)+'.csv';
-    headers = ['nom','tel','grade','couleur','created_at'];
-  } else {
-    data = ADM_CACHE.annonces || [];
-    filename = 'fasopermut-annonces-'+new Date().toISOString().slice(0,10)+'.csv';
-    headers = ['id','nom','tel','grade','disc','reg','prov','etab','regs_dest','provs_dest','created_at'];
-  }
-  if (!data.length) { showToast('Aucune donnée à exporter'); return; }
-  rows = [headers.join(',')];
-  data.forEach(function(row){
-    rows.push(headers.map(function(h){
-      var v = row[h];
-      if (Array.isArray(v)) v = v.join('|');
-      if (v === null || v === undefined) v = '';
-      v = String(v).replace(/"/g,'""');
-      if (/[,"\n]/.test(v)) v = '"'+v+'"';
-      return v;
-    }).join(','));
-  });
-  var blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8'});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('✅ Export CSV téléchargé');
-}
-
-async function adminBanUser(tel) {
-  if (!confirm('Bannir et supprimer l\'utilisateur '+tel+' et toutes ses annonces ?')) return;
-  var ok = await sbAdminBanUser(tel);
-  if (ok) {
-    document.querySelectorAll('.ann-card').forEach(function(c){
-      if ((c.dataset.tel||'') === tel) c.remove();
-    });
-    if (typeof filterAnn === 'function') filterAnn();
-    showToast('✅ Utilisateur banni et supprimé.');
-    renderAdminPanel();
-  } else {
-    showToast('❌ Erreur lors de la suppression.');
-  }
-}
-
-async function adminDeleteAnnById(id) {
-  if (!confirm('Supprimer cette annonce ?')) return;
-  var ok = await sbAdminDeleteAnnonce(id);
-  if (ok) {
-    var card = document.querySelector('.ann-card[data-id="'+id+'"]');
-    if (card) { card.remove(); if (typeof filterAnn === 'function') filterAnn(); }
-    showToast('✅ Annonce supprimée.');
-    renderAdminPanel();
-  } else {
-    showToast('❌ Erreur lors de la suppression.');
-  }
-}
-
-function adminDeleteAnn(btn) {
-  var row = btn.closest('div[style*="display:flex"]');
-  if (!row) return;
-  var match = btn.getAttribute('onclick').match(/adminDeleteAnnById\((\d+)\)/);
-  if (match) adminDeleteAnnById(parseInt(match[1]));
-}
-
-function adminTabSwitch(tab, ev) {
-  document.querySelectorAll('.adm-tab-btn').forEach(function(b){
-    b.classList.remove('active');
-    b.style.background = 'none';
-    b.style.color = 'var(--txt2)';
-    b.style.fontWeight = '600';
-    b.style.boxShadow = 'none';
-  });
-  document.querySelectorAll('.adm-pane').forEach(function(p){ p.style.display='none'; });
-  var target = ev && ev.target ? ev.target : null;
-  if (target) {
-    target.classList.add('active');
-    target.style.background = '#fff';
-    target.style.color = 'var(--bleu)';
-    target.style.fontWeight = '700';
-    target.style.boxShadow = '0 1px 4px rgba(0,0,0,.1)';
-  }
-  var pane = document.getElementById('adm-pane-'+tab);
-  if (pane) pane.style.display = 'block';
-  // Forcer resize des charts quand on ouvre la vue
-  if (tab === 'vue') {
-    setTimeout(function(){
-      Object.keys(ADM_CACHE.charts).forEach(function(k){ try { ADM_CACHE.charts[k].resize(); } catch(e){} });
-    }, 50);
-  }
-  // Charge auto de la file WhatsApp
-  if (tab === 'wa') { try { loadWaQueue(); } catch(e){} }
-}
-
-</script>
-
-<!-- Modal WhatsApp opt-in : recevoir alertes WhatsApp -->
-<div class="wa-modal-bg" id="wa-modal-bg" onclick="if(event.target===this)closeWaOptin()">
-  <div class="wa-modal">
-    <button class="wa-modal-close" onclick="closeWaOptin()">×</button>
-    <div class="wa-modal-hdr">
-      <h3>📲 Alertes WhatsApp</h3>
-      <p>Reçois un message WhatsApp dès qu'un collègue correspondant à ton profil publie</p>
-    </div>
-    <div class="wa-modal-body">
-      <div style="background:#e8f5e9;border-left:4px solid #25d366;padding:9px 12px;border-radius:6px;font-size:11px;color:#1b5e20;margin-bottom:10px">
-        <b>100% gratuit</b> · Numéro confidentiel · Désinscription en 1 clic
-      </div>
-      <div style="font-size:12px;color:#444;margin-bottom:8px;line-height:1.5">
-        Recevois directement sur WhatsApp les permutations qui te correspondent, les annonces dans des zones proches, les actualités du ministère et les informations FasoPermut.
-      </div>
-      <label>Ton numéro WhatsApp *</label>
-      <input type="tel" id="wa-phone" placeholder="70 00 00 00" inputmode="numeric" oninput="filterPhone&&filterPhone(this)">
-      <div id="wa-already-info" style="display:none;font-size:11px;color:#1976d2;margin-top:6px;font-style:italic">Le système utilisera ton profil enseignant déjà enregistré pour cibler les permutations qui te concernent.</div>
-      <button class="wa-modal-submit" onclick="submitWaOptin()">Activer mes alertes WhatsApp</button>
-      <div style="font-size:10px;color:#888;text-align:center;margin-top:8px">En cliquant tu acceptes que FasoPermut te contacte sur WhatsApp pour les permutations et informations utiles.</div>
-    </div>
-  </div>
-</div>
-
-<!-- Bouton WhatsApp flottant clignotant : amène à la chaîne FasoPermut -->
-<a class="fp-wa-float" href="https://whatsapp.com/channel/0029VbCIoQPElagpxG9ZIn0H" target="_blank" rel="noopener" aria-label="Rejoindre la chaîne WhatsApp FasoPermut" title="Rejoindre la chaîne WhatsApp FasoPermut">
-  <span class="fp-wa-float-lbl">Rejoindre la chaîne</span>
-  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-</a>
-</body>
-</html>
+      + '
