@@ -1,5 +1,5 @@
-// Service Worker FasoPermut — v1
-const CACHE_NAME = 'fasopermut-v1';
+// Service Worker FasoPermut — v2 (force cache refresh after audit fixes)
+const CACHE_NAME = 'fasopermut-v2-2026-05-03';
 const CORE = ['/', '/index.html', '/supabase.min.js', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -7,6 +7,13 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((c) => c.addAll(CORE).catch(() => {}))
   );
+});
+
+// Permet à la page de demander au SW de s'activer immédiatement (auto-update propre)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', (event) => {

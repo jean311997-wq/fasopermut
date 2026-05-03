@@ -1318,15 +1318,32 @@ footer b{color:#4fc878}
 
 <script>
 // ===== VERSION =====
-window.APP_VERSION = 'v2026.04.25.4-pro-clean';
+window.APP_VERSION = 'v2026.05.03.1-stable';
 console.log('[FasoPermut] version', window.APP_VERSION);
 
-// ===== PWA : Service Worker =====
+// ===== PWA : Service Worker (avec auto-update au chargement) =====
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function(){
     navigator.serviceWorker.register('/sw.js').then(function(reg){
       console.log('[PWA] SW actif', reg.scope);
       window._swReg = reg;
+      // Force update check à chaque visite (corrige le cache après deploy)
+      try { reg.update(); } catch(e){}
+      // Si un nouveau SW est en attente, on l'active immédiatement
+      if (reg.waiting) { try { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); } catch(e){} }
+      reg.addEventListener('updatefound', function(){
+        var newWorker = reg.installing;
+        if (newWorker) {
+          newWorker.addEventListener('statechange', function(){
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('[PWA] Nouvelle version disponible, rechargement...');
+              try { newWorker.postMessage({ type: 'SKIP_WAITING' }); } catch(e){}
+              // Laisse 1.5s pour que SKIP_WAITING propage, puis reload
+              setTimeout(function(){ location.reload(); }, 1500);
+            }
+          });
+        }
+      });
     }).catch(function(err){ console.warn('[PWA] SW erreur', err); });
   });
 }
@@ -3164,9 +3181,8 @@ async function connecterUser() {
   var section = document.getElementById('mes-ann-compte');
   if(section) section.style.display = 'block';
   renderMesAnnoncesCompte();
-  // Bump streak + réafficher la carte gamification
+  // Bump streak (gamification désactivée pour rester pro)
   try { setTimeout(bumpStreakNow, 600); } catch(e){}
-  try { setTimeout(renderGamiCard, 800); } catch(e){}
   go('s3');
 }
 
