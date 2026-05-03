@@ -27,6 +27,45 @@
 <link rel="preconnect" href="https://vbruosulizonagtzkrip.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <!-- Supabase JS servi localement depuis Vercel (evite blocage CDN chez certains FAI au Burkina) -->
+<script>
+/* FILET DE SÉCURITÉ — script isolé : garantit la navigation même si le script principal a un bug */
+(function(){
+  // Capture toutes les erreurs JS et les expose en console claire
+  window.addEventListener('error', function(e){
+    try { console.error('[FasoPermut ERREUR]', e.message, 'à', e.filename + ':' + e.lineno); } catch(_){}
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    try { console.error('[FasoPermut PROMISE rejetée]', e.reason); } catch(_){}
+  });
+  // Fallback navigation : si go() ou nav() ne sont pas définis (script principal cassé),
+  // on les recrée pour que les boutons du bas fonctionnent au minimum
+  setTimeout(function(){
+    if (typeof window.go !== 'function') {
+      console.warn('[FasoPermut] go() non défini, activation du filet de sécurité');
+      window.go = function(id){
+        document.querySelectorAll('.scr').forEach(function(s){ s.classList.remove('on'); });
+        var el = document.getElementById(id); if (el) el.classList.add('on');
+        window.scrollTo(0,0);
+      };
+    }
+    if (typeof window.nav !== 'function') {
+      window.nav = function(b){
+        document.querySelectorAll('.bni').forEach(function(x){ x.classList.remove('active'); });
+        if (b) b.classList.add('active');
+      };
+    }
+    if (typeof window.cl !== 'function') {
+      window.cl = function(id){ var e=document.getElementById(id); if(e)e.classList.remove('on'); };
+    }
+    if (typeof window.checkLoginBeforePublish !== 'function') {
+      window.checkLoginBeforePublish = function(){ window.go('s2'); };
+    }
+    if (typeof window.clearNotifBadge !== 'function') {
+      window.clearNotifBadge = function(){ var b=document.getElementById('notif-badge'); if(b)b.style.display='none'; };
+    }
+  }, 800);
+})();
+</script>
 <script src="/supabase.min.js?v=2026042301"></script>
 <script>
 /* Fallback: si le bundle local n'a pas charge, on tente le CDN jsdelivr puis unpkg */
@@ -4563,7 +4602,7 @@ async function loadWaQueue() {
       + '<span style="font-size:11px;color:var(--txt2)">Astuce : utilise le bouton « ENVOYER TOUS » pour tout traiter en série, ou clique chaque message un par un.</span>'
       + '</div>'
       + '<button onclick="waBatchSendAll()" style="display:block;width:100%;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border:none;padding:13px;border-radius:9px;font-size:14px;font-weight:800;margin-bottom:12px;cursor:pointer;box-shadow:0 4px 12px rgba(37,211,102,.4)">📤 ENVOYER TOUS LES MESSAGES (' + data.length + ')</button>'
-      + '<div style="font-size:10px;color:var(--txt2);text-align:center;margin-bottom:10px">⚠️ Ton navigateur peut demander d''autoriser les fenêtres pop-up — accepte pour que ça fonctionne.</div>';
+      + '<div style="font-size:10px;color:var(--txt2);text-align:center;margin-bottom:10px">⚠️ Ton navigateur peut demander d\'autoriser les fenêtres pop-up — accepte pour que ça fonctionne.</div>';
     data.forEach(function(q){
       var msgEsc = escH(q.message).replace(/\n/g, '<br>');
       h += '<div data-wa-id="' + q.id + '" style="background:#fff;border:1px solid var(--gris2);border-radius:9px;padding:10px;margin-bottom:8px">'
