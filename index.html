@@ -4622,25 +4622,140 @@ async function loadWaQueue() {
   } catch(e) { holder.innerHTML = '<div style="color:#e53935">Erreur : '+escH(e.message||String(e))+'</div>'; }
 }
 
-// Envoi en série : ouvre 1 lien wa.me toutes les 4 secondes, marque comme envoyé
+// ===== MODE ENVOI RAPIDE (option B) =====
+// État global du batch
+window._fpBatch = window._fpBatch || { running: false, queue: [], current: 0, paused: false };
+
 async function waBatchSendAll() {
   var cards = document.querySelectorAll('[data-wa-id]');
   if (!cards.length) { showToast('Aucun message à envoyer'); return; }
-  if (!confirm('Envoyer ' + cards.length + ' message(s) WhatsApp ?\n\nAstuce : ferme chaque onglet WhatsApp dès que tu as appuyé sur ENVOYER, le suivant s\'ouvre automatiquement.')) return;
-  showToast('🚀 Envoi en série démarré (' + cards.length + ' messages)');
-  for (var i = 0; i < cards.length; i++) {
-    var card = cards[i];
+  if (window._fpBatch.running) { showToast('⏳ Un envoi est déjà en cours'); return; }
+
+  // Confirmation avec instructions claires
+  var msg = 'ENVOI RAPIDE de ' + cards.length + ' message(s) WhatsApp\n\n'
+          + 'Comment ça marche :\n'
+          + '1. Le 1er onglet WhatsApp s\'ouvre\n'
+          + '2. Tu appuies sur ENTRÉE pour envoyer\n'
+          + '3. Tu appuies Ctrl+W pour fermer l\'onglet\n'
+          + '4. Le suivant s\'ouvre AUTOMATIQUEMENT dès que tu reviens ici\n\n'
+          + 'Tu peux mettre en pause à tout moment.\n\nDémarrer ?';
+  if (!confirm(msg)) return;
+
+  // Construit la file
+  window._fpBatch.queue = [];
+  cards.forEach(function(card){
     var link = card.querySelector('a[target="_blank"]');
     var id = card.getAttribute('data-wa-id');
-    if (link && link.href) {
-      window.open(link.href, '_blank');
-      try { await sbWaMarkSent(id); } catch(e){}
-      // Pause entre chaque pour laisser le temps d'envoyer
-      await new Promise(function(r){ setTimeout(r, 4000); });
-    }
+    if (link && link.href) window._fpBatch.queue.push({ id: id, url: link.href, card: card });
+  });
+  window._fpBatch.current = 0;
+  window._fpBatch.running = true;
+  window._fpBatch.paused = false;
+
+  // Crée le panneau de contrôle flottant
+  showFpBatchPanel();
+
+  // Détecte le retour sur l'onglet FasoPermut → enchaîne automatiquement
+  if (!window._fpBatchFocusBound) {
+    window.addEventListener('focus', fpBatchOnFocus);
+    document.addEventListener('visibilitychange', function(){
+      if (document.visibilityState === 'visible') fpBatchOnFocus();
+    });
+    window._fpBatchFocusBound = true;
   }
-  showToast('✅ Tous les messages ouverts. Vérifie chaque onglet et appuie sur ENVOYER.');
-  setTimeout(loadWaQueue, 1500);
+
+  // Lance le premier
+  fpBatchSendNext();
+}
+
+function fpBatchOnFocus() {
+  if (!window._fpBatch.running || window._fpBatch.paused) return;
+  // Petit délai pour laisser le focus s'installer
+  setTimeout(function(){
+    if (!window._fpBatch.paused && window._fpBatch.running) fpBatchSendNext();
+  }, 600);
+}
+
+async function fpBatchSendNext() {
+  var b = window._fpBatch;
+  if (!b.running || b.paused) return;
+  if (b.current >= b.queue.length) {
+    // Terminé
+    b.running = false;
+    fpBatchUpdatePanel();
+    showToast('✅ Tous les messages ont été envoyés (' + b.queue.length + ')');
+    setTimeout(loadWaQueue, 800);
+    return;
+  }
+  var item = b.queue[b.current];
+  // Marque le précédent comme envoyé (s'il y en a un)
+  if (b.current > 0) {
+    var prev = b.queue[b.current - 1];
+    try { await sbWaMarkSent(prev.id); } catch(e){}
+    if (prev.card) prev.card.style.opacity = '0.4';
+  }
+  // Ouvre le tab pour le message courant
+  try {
+    var win = window.open(item.url, '_blank');
+    if (!win) {
+      showToast('⚠️ Le navigateur a bloqué la fenêtre. Autorise les pop-ups et clique "Continuer".');
+      b.paused = true;
+    }
+  } catch(e) {}
+  b.current++;
+  fpBatchUpdatePanel();
+}
+
+function showFpBatchPanel() {
+  var existing = document.getElementById('fp-batch-panel');
+  if (existing) existing.remove();
+  var el = document.createElement('div');
+  el.id = 'fp-batch-panel';
+  el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a2f5a;color:#fff;padding:14px 16px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.4);z-index:9998;max-width:380px;width:92%;font-family:inherit';
+  el.innerHTML = ''
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+      + '<div style="font-size:13px;font-weight:800">📤 Envoi WhatsApp en série</div>'
+      + '<button onclick="fpBatchStop()" style="background:rgba(255,255,255,.15);color:#fff;border:none;padding:4px 9px;border-radius:6px;font-size:11px;cursor:pointer">Fermer</button>'
+    + '</div>'
+    + '<div id="fp-batch-progress" style="font-size:12px;color:#a0d4b0;margin-bottom:6px"></div>'
+    + '<div style="background:rgba(255,255,255,.15);border-radius:6px;overflow:hidden;height:6px;margin-bottom:10px">'
+      + '<div id="fp-batch-bar" style="background:#4fc878;height:100%;width:0%;transition:width .3s"></div>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px">'
+      + '<button id="fp-batch-pause" onclick="fpBatchTogglePause()" style="flex:1;background:#f57c00;color:#fff;border:none;padding:9px;border-radius:7px;font-size:12px;font-weight:800;cursor:pointer">⏸️ Pause</button>'
+      + '<button onclick="fpBatchSendNext()" style="flex:1;background:#22a05e;color:#fff;border:none;padding:9px;border-radius:7px;font-size:12px;font-weight:800;cursor:pointer">⏭️ Suivant</button>'
+    + '</div>'
+    + '<div style="font-size:10px;color:#8ab0cc;margin-top:8px;text-align:center">💡 Astuce : dans WhatsApp, appuie ENTRÉE puis Ctrl+W pour fermer</div>';
+  document.body.appendChild(el);
+  fpBatchUpdatePanel();
+}
+
+function fpBatchUpdatePanel() {
+  var b = window._fpBatch;
+  var prog = document.getElementById('fp-batch-progress');
+  var bar = document.getElementById('fp-batch-bar');
+  var btn = document.getElementById('fp-batch-pause');
+  if (!prog || !bar) return;
+  var sent = Math.max(0, b.current - 1);
+  var total = b.queue.length;
+  var percent = total ? Math.round((sent / total) * 100) : 0;
+  prog.innerHTML = '<b>' + sent + ' / ' + total + '</b> envoyés' + (b.running ? '' : ' — terminé ✅');
+  bar.style.width = percent + '%';
+  if (btn) btn.textContent = b.paused ? '▶️ Reprendre' : '⏸️ Pause';
+}
+
+function fpBatchTogglePause() {
+  window._fpBatch.paused = !window._fpBatch.paused;
+  fpBatchUpdatePanel();
+  showToast(window._fpBatch.paused ? '⏸️ Pause' : '▶️ Reprise');
+  if (!window._fpBatch.paused) fpBatchSendNext();
+}
+
+function fpBatchStop() {
+  window._fpBatch.running = false;
+  window._fpBatch.paused = false;
+  var p = document.getElementById('fp-batch-panel');
+  if (p) p.remove();
 }
 
 async function sbWaMarkSent(id) {
