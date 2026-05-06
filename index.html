@@ -5362,6 +5362,373 @@ function adminTabSwitch(tab, ev) {
   if (tab === 'wa') { try { loadWaQueue(); } catch(e){} }
 }
 
+// ============================================================
+// ===== INNOVATIONS RÉTENTION (mai 2026) =====
+// Strings en double-quotes partout pour éviter les pièges d'apostrophes.
+// Tout est wrappé en try/catch pour éviter de bloquer le site.
+// ============================================================
+
+// --- 7. COMPTE À REBOURS ARRÊTÉ PERMUTATIONS ---
+// Date à ajuster selon la vraie clôture du mouvement BF (modifiable ici)
+window.FP_DEADLINE_PERMUTATION = "2026-06-30T23:59:59";
+
+function fpInitCountdown() {
+  var hero = document.getElementById("s1");
+  if (!hero) return;
+  var existing = document.getElementById("fp-countdown-banner");
+  if (existing) existing.remove();
+  var deadline = new Date(window.FP_DEADLINE_PERMUTATION);
+  if (isNaN(deadline.getTime())) return;
+  var div = document.createElement("div");
+  div.id = "fp-countdown-banner";
+  div.style.cssText = "background:linear-gradient(135deg,#f57c00,#e64a19);color:#fff;padding:11px 14px;margin:8px 0 4px;border-radius:10px;font-size:12px;text-align:center;box-shadow:0 4px 14px rgba(245,124,0,.4);font-weight:600;line-height:1.4";
+  function tick() {
+    var now = new Date();
+    var diff = deadline.getTime() - now.getTime();
+    if (diff <= 0) {
+      div.innerHTML = "⏰ <b>Arrêté des permutations clos.</b> Reste actif pour la prochaine session.";
+      return;
+    }
+    var days = Math.floor(diff / 86400000);
+    var hours = Math.floor((diff % 86400000) / 3600000);
+    var label = days >= 1 ? (days + " jour" + (days > 1 ? "s" : "")) : (hours + " heure" + (hours > 1 ? "s" : ""));
+    div.innerHTML = "⏰ <b>Bientôt l’arrêté des permutations !</b><br>Plus que <b>" + label + "</b> pour retrouver ton co-permutant. Profite avant la clôture !";
+  }
+  tick();
+  setInterval(tick, 60000);
+  // Insertion : juste après le badge en haut du hero
+  var badge = hero.querySelector(".badge");
+  if (badge && badge.parentNode) {
+    badge.parentNode.insertBefore(div, badge.nextSibling);
+  } else {
+    hero.insertBefore(div, hero.firstChild);
+  }
+}
+
+// --- 5. PARRAINAGE VISIBLE (carte sur Mon Compte) ---
+function fpInitParrainage() {
+  if (!isLoggedIn || !currentUserData) return;
+  var refCode = currentUserData.referral_code || "";
+  var sco = document.getElementById("s-co");
+  if (!sco) return;
+  var existing = document.getElementById("fp-parrain-card");
+  if (existing) existing.remove();
+  var url = location.origin + (refCode ? "/?ref=" + encodeURIComponent(refCode) : "/");
+  var msg = "🇧🇫 Salut ! Inscris-toi sur FasoPermut, la plateforme officielle de permutation enseignants du Burkina. C’est gratuit et ça marche ! 👉 " + url;
+  var card = document.createElement("div");
+  card.id = "fp-parrain-card";
+  card.style.cssText = "background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;padding:14px;margin:10px 0 14px;border-radius:14px;text-align:center;box-shadow:0 6px 18px rgba(37,211,102,.45)";
+  card.innerHTML = ""
+    + "<div style=\"font-size:14px;font-weight:900;margin-bottom:4px\">🤝 Invite tes collègues, gagne des avantages</div>"
+    + "<div style=\"font-size:12px;opacity:.95;margin-bottom:10px\">5 collègues parrainés = badge OR + accès Premium 6 mois</div>"
+    + "<button onclick=\"fpShareParrainage()\" style=\"background:#fff;color:#128c7e;border:none;padding:10px 18px;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;display:inline-block\">📲 Inviter mes collègues</button>"
+    + (refCode ? "<div style=\"font-size:10px;opacity:.85;margin-top:8px\">Ton code : <b>" + escH(refCode) + "</b></div>" : "");
+  sco.insertBefore(card, sco.firstChild);
+  window.fpShareParrainage = function() {
+    if (navigator.share) {
+      navigator.share({ title: "FasoPermut", text: msg, url: url }).catch(function(){});
+    } else {
+      window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+    }
+  };
+}
+
+// --- 6. TÉMOIGNAGES TOURNANTS (sur l'accueil) ---
+window.FP_TESTIMONIALS = [
+  { txt: "« J’ai trouvé un co-permutant en moins de 10 jours. Plateforme rapide et sérieuse. »", who: "Mariam, PCLC, Kadiogo" },
+  { txt: "« Fini les groupes WhatsApp éparpillés. Tout est centralisé ici. »", who: "Adama, PCCEG, Bankui" },
+  { txt: "« Les notifications WhatsApp m’ont alerté juste à temps pour mon match. »", who: "Salif, PCE, Nakambé" },
+  { txt: "« Site clair, intuitif. Je recommande à tous les enseignants du Burkina. »", who: "Aïcha, ATE, Guiriko" },
+  { txt: "« J’ai partagé avec 6 collègues, 3 se sont inscrits le même jour. »", who: "Ibrahim, PCCEG, Yaadga" }
+];
+function fpInitTestimonials() {
+  var hero = document.getElementById("s1");
+  if (!hero) return;
+  var existing = document.getElementById("fp-testimonials");
+  if (existing) existing.remove();
+  var box = document.createElement("div");
+  box.id = "fp-testimonials";
+  box.style.cssText = "background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:11px 14px;margin:10px 0;font-size:12px;color:#e0e8f0;text-align:center;line-height:1.5;min-height:64px;display:flex;flex-direction:column;justify-content:center";
+  var idx = 0;
+  function render() {
+    var t = window.FP_TESTIMONIALS[idx % window.FP_TESTIMONIALS.length];
+    box.innerHTML = "<div style=\"font-style:italic\">" + escH(t.txt) + "</div>"
+      + "<div style=\"font-size:10px;color:#9ee9b6;margin-top:6px;font-weight:700\">— " + escH(t.who) + "</div>";
+    idx++;
+  }
+  render();
+  setInterval(render, 6000);
+  // Insère avant les boutons CTA
+  var btnP = hero.querySelector(".btn-p");
+  if (btnP && btnP.parentNode) btnP.parentNode.insertBefore(box, btnP);
+}
+
+// --- 4. TABLEAU DE BORD PERSONNEL (sur Mon Compte) ---
+async function fpInitDashboard() {
+  if (!isLoggedIn || !currentUserData || !currentUserData.tel) return;
+  var sco = document.getElementById("s-co");
+  if (!sco) return;
+  var existing = document.getElementById("fp-dashboard");
+  if (existing) existing.remove();
+  var card = document.createElement("div");
+  card.id = "fp-dashboard";
+  card.style.cssText = "background:#fff;border:1px solid #e0e4ea;border-radius:14px;padding:14px;margin:0 0 12px;box-shadow:0 2px 8px rgba(0,0,0,.06)";
+  card.innerHTML = "<div style=\"font-size:13px;font-weight:800;color:#1a2f5a;margin-bottom:10px\">📊 Mon tableau de bord</div>"
+    + "<div id=\"fp-dash-content\" style=\"font-size:12px;color:#555\">⏳ Chargement…</div>";
+  sco.insertBefore(card, sco.firstChild);
+  try {
+    var sb = await getSb();
+    if (!sb) return;
+    // Mes annonces
+    var mine = await sb.from("annonces").select("id,views_count,shares_count").eq("tel", currentUserData.tel);
+    var nbAnn = (mine.data || []).length;
+    var totalViews = (mine.data || []).reduce(function(a,b){ return a + (b.views_count || 0); }, 0);
+    var totalShares = (mine.data || []).reduce(function(a,b){ return a + (b.shares_count || 0); }, 0);
+    // Total annonces sur la plateforme
+    var allCount = await sb.from("annonces").select("*", { count: "exact", head: true });
+    var totalAnn = allCount.count || 0;
+    // Matchs potentiels
+    var myAnnsFull = await sb.from("annonces").select("reg,regs_dest,grade").eq("tel", currentUserData.tel);
+    var matchesPotentiels = 0;
+    if (myAnnsFull.data && myAnnsFull.data.length) {
+      var others = await sb.from("annonces").select("reg,regs_dest,grade").neq("tel", currentUserData.tel);
+      (others.data || []).forEach(function(o){
+        (myAnnsFull.data || []).forEach(function(me){
+          var iWantTheirReg = (me.regs_dest || []).some(function(r){ return o.reg && o.reg.indexOf(r) !== -1; });
+          var sameGrade = me.grade === o.grade;
+          if (iWantTheirReg && sameGrade) matchesPotentiels++;
+        });
+      });
+    }
+    // Niveau / points
+    var myUser = await sb.from("users").select("points,level,streak_days,share_count").eq("tel", currentUserData.tel).maybeSingle();
+    var pts = (myUser.data && myUser.data.points) || 0;
+    var lvl = (myUser.data && myUser.data.level) || "Bronze";
+    var streak = (myUser.data && myUser.data.streak_days) || 0;
+    var nbShares = (myUser.data && myUser.data.share_count) || 0;
+    var content = "<div style=\"display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px\">"
+      + fpDashStat(nbAnn, "Mes annonces", "#22a05e")
+      + fpDashStat(totalViews, "Vues reçues", "#1976d2")
+      + fpDashStat(matchesPotentiels, "Matchs potentiels", "#f57c00")
+      + fpDashStat(totalShares + nbShares, "Partages", "#7b1fa2")
+      + "</div>"
+      + "<div style=\"background:#f5f7fa;padding:8px 10px;border-radius:8px;font-size:11px;color:#555;text-align:center\">"
+        + "🏅 Niveau <b style=\"color:#1a2f5a\">" + escH(lvl) + "</b> · " + pts + " points"
+        + (streak > 0 ? " · 🔥 Streak " + streak + " jour" + (streak > 1 ? "s" : "") : "")
+      + "</div>"
+      + "<div style=\"font-size:11px;color:#888;text-align:center;margin-top:6px\">Tu fais partie des " + totalAnn + " annonceurs actifs sur FasoPermut.</div>";
+    var contentEl = document.getElementById("fp-dash-content");
+    if (contentEl) contentEl.innerHTML = content;
+    // Stocker pour les badges
+    window._fpDashStats = { nbAnn: nbAnn, totalViews: totalViews, matchesPotentiels: matchesPotentiels, nbShares: nbShares + totalShares, pts: pts, lvl: lvl, streak: streak };
+    fpInitBadges(); // re-render badges après dashboard chargé
+  } catch(e) {
+    var contentEl2 = document.getElementById("fp-dash-content");
+    if (contentEl2) contentEl2.innerHTML = "<span style=\"color:#888\">Statistiques temporairement indisponibles.</span>";
+  }
+}
+function fpDashStat(value, label, color) {
+  return "<div style=\"background:#f8fafc;border-left:3px solid " + color + ";padding:8px 10px;border-radius:6px\">"
+    + "<div style=\"font-size:18px;font-weight:900;color:" + color + ";line-height:1\">" + value + "</div>"
+    + "<div style=\"font-size:10px;color:#666;margin-top:2px\">" + label + "</div>"
+    + "</div>";
+}
+
+// --- 9. BADGES DE PROGRESSION ---
+function fpInitBadges() {
+  if (!isLoggedIn || !currentUserData) return;
+  var sco = document.getElementById("s-co");
+  if (!sco) return;
+  var existing = document.getElementById("fp-badges");
+  if (existing) existing.remove();
+  var stats = window._fpDashStats || {};
+  var badges = [];
+  if ((stats.nbAnn || 0) >= 1) badges.push({ ico: "📝", label: "Première annonce", color: "#22a05e" });
+  if ((stats.nbAnn || 0) >= 3) badges.push({ ico: "📚", label: "Multi-annonceur", color: "#1976d2" });
+  if ((stats.totalViews || 0) >= 10) badges.push({ ico: "👁️", label: "10+ vues", color: "#f57c00" });
+  if ((stats.totalViews || 0) >= 50) badges.push({ ico: "🌟", label: "Étoile montante", color: "#e91e63" });
+  if ((stats.nbShares || 0) >= 1) badges.push({ ico: "📲", label: "Partageur", color: "#25d366" });
+  if ((stats.nbShares || 0) >= 5) badges.push({ ico: "🚀", label: "Ambassadeur", color: "#7b1fa2" });
+  if ((stats.streak || 0) >= 3) badges.push({ ico: "🔥", label: "Streak 3+", color: "#ff5722" });
+  if ((stats.streak || 0) >= 7) badges.push({ ico: "💎", label: "Fidèle", color: "#00bcd4" });
+  if ((stats.pts || 0) >= 100) badges.push({ ico: "🏆", label: "100+ points", color: "#ff9800" });
+  if (!badges.length) {
+    badges.push({ ico: "🎯", label: "À toi de jouer", color: "#888" });
+  }
+  var box = document.createElement("div");
+  box.id = "fp-badges";
+  box.style.cssText = "background:#fff;border:1px solid #e0e4ea;border-radius:12px;padding:10px 12px;margin:0 0 12px";
+  box.innerHTML = "<div style=\"font-size:12px;font-weight:800;color:#1a2f5a;margin-bottom:8px\">🏅 Mes badges</div>"
+    + "<div style=\"display:flex;flex-wrap:wrap;gap:6px\">"
+    + badges.map(function(b){
+        return "<span style=\"display:inline-flex;align-items:center;gap:4px;background:" + b.color + "1a;color:" + b.color + ";padding:4px 9px;border-radius:14px;font-size:11px;font-weight:700\">"
+          + b.ico + " " + escH(b.label)
+          + "</span>";
+      }).join("")
+    + "</div>";
+  // Insère après le dashboard
+  var dash = document.getElementById("fp-dashboard");
+  if (dash && dash.nextSibling) {
+    sco.insertBefore(box, dash.nextSibling);
+  } else if (dash) {
+    sco.insertBefore(box, dash);
+  } else {
+    sco.insertBefore(box, sco.firstChild);
+  }
+}
+
+// --- 10. PROFIL MYSTÈRE DU JOUR ---
+async function fpInitProfilMystere() {
+  if (!isLoggedIn || !currentUserData) return;
+  var s3 = document.getElementById("s3");
+  if (!s3) return;
+  var existing = document.getElementById("fp-mystere");
+  if (existing) existing.remove();
+  try {
+    var sb = await getSb();
+    if (!sb) return;
+    var myAnns = await sb.from("annonces").select("reg,regs_dest").eq("tel", currentUserData.tel);
+    var myDestRegs = [];
+    (myAnns.data || []).forEach(function(a){
+      (a.regs_dest || []).forEach(function(r){ if (myDestRegs.indexOf(r) === -1) myDestRegs.push(r); });
+    });
+    if (!myDestRegs.length) return;
+    // Choisir une annonce aléatoire dans une de mes destinations souhaitées
+    var others = await sb.from("annonces").select("id,nom,grade,disc,reg,regs_dest").neq("tel", currentUserData.tel).limit(50);
+    var candidats = (others.data || []).filter(function(o){
+      return myDestRegs.some(function(r){ return o.reg && o.reg.indexOf(r) !== -1; });
+    });
+    if (!candidats.length) return;
+    // Tirage déterministe : 1 par jour (basé sur date)
+    var today = new Date().toISOString().slice(0, 10);
+    var hash = 0;
+    for (var i = 0; i < today.length; i++) hash = (hash * 31 + today.charCodeAt(i)) >>> 0;
+    var pick = candidats[hash % candidats.length];
+    var box = document.createElement("div");
+    box.id = "fp-mystere";
+    box.style.cssText = "background:linear-gradient(135deg,#7b1fa2,#4a148c);color:#fff;padding:14px;margin:10px 14px;border-radius:14px;box-shadow:0 6px 18px rgba(123,31,162,.4)";
+    box.innerHTML = ""
+      + "<div style=\"font-size:11px;font-weight:700;color:#e1bee7;margin-bottom:4px\">🎲 PROFIL MYSTÈRE DU JOUR</div>"
+      + "<div style=\"font-size:14px;font-weight:800;margin-bottom:6px\">Un " + escH((pick.grade || "").split("(")[0].trim()) + " de " + escH(pick.reg || "") + "</div>"
+      + "<div style=\"font-size:12px;opacity:.95;margin-bottom:10px\">cherche peut-être à venir vers ta région. Discipline : " + escH(pick.disc || "—") + "</div>"
+      + "<button data-fp-mystere-id=\"" + pick.id + "\" style=\"background:#fff;color:#4a148c;border:none;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer\">🔍 Voir cette annonce</button>";
+    // Branche le clic après injection dans le DOM
+    setTimeout(function(){
+      var btn = box.querySelector("button[data-fp-mystere-id]");
+      if (btn) btn.addEventListener("click", function(){
+        try { go("s3"); } catch(e){}
+        setTimeout(function(){
+          var card = document.querySelector(".ann-card[data-id=\"" + pick.id + "\"]");
+          if (card && card.scrollIntoView) card.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 350);
+      });
+    }, 100);
+    s3.insertBefore(box, s3.firstChild);
+  } catch(e) {}
+}
+
+// --- 2. SCORE DE MATCH SUR ANNONCES ---
+function fpScoreFor(annonce) {
+  if (!isLoggedIn || !currentUserData) return null;
+  try {
+    var myAnns = (window.mesAnnonces || []);
+    if (!myAnns.length) return null;
+    var bestScore = 0;
+    myAnns.forEach(function(my){
+      var score = 0;
+      // Grade match (40 pts)
+      if (my.grade && annonce.grade && my.grade === annonce.grade) score += 40;
+      // Discipline match (10 pts bonus)
+      if (my.disc && annonce.disc && my.disc === annonce.disc) score += 10;
+      // Sa région = ma destination (30 pts)
+      var myDest = my.regs_dest || my.regsDest || [];
+      var theirReg = (annonce.reg || "").split(" (ex")[0].trim();
+      if (myDest.some(function(r){ return r === theirReg || theirReg.indexOf(r) !== -1; })) score += 30;
+      // Ma région = sa destination (20 pts)
+      var myReg = (my.reg || "").split(" (ex")[0].trim();
+      var theirDest = annonce.regs_dest || annonce.regsDest || [];
+      if (theirDest.some(function(r){ return r === myReg || myReg.indexOf(r) !== -1; })) score += 20;
+      if (score > bestScore) bestScore = score;
+    });
+    return Math.min(100, bestScore);
+  } catch(e) { return null; }
+}
+
+function fpInitMatchScore() {
+  if (!isLoggedIn || !currentUserData) return;
+  var cards = document.querySelectorAll(".ann-card");
+  cards.forEach(function(c){
+    if (c.querySelector(".fp-score-badge")) return; // déjà fait
+    var info = c.dataset.info || "";
+    var grade = c.dataset.grade || "";
+    var disc = c.dataset.disc || "";
+    var reg = c.dataset.reg || "";
+    var ann = { grade: grade, disc: disc, reg: reg, regs_dest: [] };
+    // Tenter d'extraire regs_dest du dataset si présent
+    try {
+      if (c.dataset.regsdest) ann.regs_dest = c.dataset.regsdest.split(",").map(function(s){ return s.trim(); });
+    } catch(e) {}
+    var score = fpScoreFor(ann);
+    if (score === null) return;
+    var color = score >= 70 ? "#22a05e" : (score >= 40 ? "#f57c00" : "#888");
+    var label = score >= 70 ? "Match parfait" : (score >= 40 ? "Match partiel" : "Faible match");
+    var badge = document.createElement("div");
+    badge.className = "fp-score-badge";
+    badge.style.cssText = "position:absolute;top:8px;right:8px;background:" + color + ";color:#fff;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:800;box-shadow:0 2px 6px rgba(0,0,0,.18);z-index:5";
+    badge.innerHTML = score + "% · " + label;
+    if (getComputedStyle(c).position === "static") c.style.position = "relative";
+    c.appendChild(badge);
+  });
+}
+
+// --- 3. PUSH NOTIFICATIONS (préparation client) ---
+async function fpInitPushSetup() {
+  // La permission est déjà gérée par askPushPermission() existant.
+  // Ici on enregistre la souscription Web Push (à brancher avec backend VAPID plus tard).
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  if (Notification.permission !== "granted") return;
+  if (!isLoggedIn || !currentUserData) return;
+  try {
+    var reg = await navigator.serviceWorker.ready;
+    // Pour activer les vraies push, il faut une clé VAPID publique + backend.
+    // On stocke juste le flag pour l'instant ; le push réel viendra avec Twilio/Firebase.
+    var subAlready = await reg.pushManager.getSubscription();
+    if (!subAlready) {
+      // Pas encore de clé VAPID - on log juste pour preparation
+      console.log("[FasoPermut] Push notifications client prêtes - en attente de configuration backend VAPID.");
+    }
+  } catch(e) {}
+}
+
+// --- INIT GLOBAL DES INNOVATIONS ---
+function fpRetentionInitAll() {
+  try { fpInitCountdown(); } catch(e) { console.warn("[fp] countdown:", e); }
+  try { fpInitTestimonials(); } catch(e) { console.warn("[fp] testimonials:", e); }
+  try { fpInitParrainage(); } catch(e) { console.warn("[fp] parrainage:", e); }
+  try { fpInitDashboard(); } catch(e) { console.warn("[fp] dashboard:", e); }
+  try { fpInitProfilMystere(); } catch(e) { console.warn("[fp] mystere:", e); }
+  try { fpInitMatchScore(); } catch(e) { console.warn("[fp] matchscore:", e); }
+  try { fpInitPushSetup(); } catch(e) { console.warn("[fp] push:", e); }
+}
+
+// Exécution : au chargement initial + à chaque navigation interne
+setTimeout(fpRetentionInitAll, 1500);
+// Réinjecte les éléments quand l'utilisateur change d'écran
+(function(){
+  var origGo = window.go;
+  if (typeof origGo === "function") {
+    window.go = function(id) {
+      var r = origGo.apply(this, arguments);
+      setTimeout(fpRetentionInitAll, 200);
+      return r;
+    };
+  }
+})();
+// Re-render score quand de nouvelles cartes sont injectées
+setInterval(function(){
+  try { fpInitMatchScore(); } catch(e) {}
+}, 4000);
+
 </script>
 
 <!-- Modal WhatsApp opt-in : recevoir alertes WhatsApp -->
