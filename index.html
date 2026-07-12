@@ -1295,21 +1295,28 @@ footer b{color:#4fc878}
       <button class="btn-ann" onclick="cl('o-pay')">Annuler</button>
     </div>
 
-    <!-- Étape 2 : Saisir téléphone -->
+    <!-- Étape 2 : Instructions de dépôt + preuve -->
     <div class="pay-pane" id="pp2">
       <div class="modal-hdr">
         <div class="titre" id="pay-op-titre">Orange Money</div>
-        <div class="sous">Entrez votre numéro de paiement</div>
+        <div class="sous">2 étapes simples</div>
       </div>
-      <div class="fi" style="margin:14px 0">
-        <label>Numéro <span id="pay-op-label">Orange Money</span> *</label>
-        <input type="tel" id="pay-phone" placeholder="70 00 00 00" oninput="filterPhone(this)" inputmode="numeric" style="font-size:18px;font-weight:700;letter-spacing:2px">
+      <div style="background:#fff8e1;border:1px solid var(--orange);border-radius:10px;padding:12px 14px;margin:12px 0;font-size:13px;color:#5a3c00">
+        <div style="font-weight:800;margin-bottom:4px">1) Envoie 300 F CFA à ce numéro :</div>
+        <div style="font-size:21px;font-weight:800;letter-spacing:1px;color:var(--orange)" id="pay-depot-num">00 00 00 00</div>
+        <div style="font-size:11px;color:#7a5c00;margin-top:4px">via <span id="pay-op-label">Orange Money</span></div>
       </div>
-      <div style="background:var(--vert3);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--vert);margin-bottom:12px">
-        📲 Vous recevrez une demande de confirmation sur ce numéro.
+      <div style="font-weight:800;font-size:13px;margin:2px 0 8px;color:var(--txt)">2) Confirme ton envoi :</div>
+      <div class="fi" style="margin:0 0 10px">
+        <label>Ton numéro (celui qui a payé) *</label>
+        <input type="tel" id="pay-phone" placeholder="70 00 00 00" oninput="filterPhone(this)" inputmode="numeric" style="font-size:17px;font-weight:700;letter-spacing:2px">
+      </div>
+      <div class="fi" style="margin:0 0 12px">
+        <label>ID de la transaction (reçu par SMS) *</label>
+        <input type="text" id="pay-ref" placeholder="Ex : PP250712.1830.A12345" style="font-size:14px;font-weight:700">
       </div>
       <button class="btn-om" id="pay-confirm-btn" onclick="payConfirm()">
-        ✅ Confirmer le paiement — 300 F
+        ✅ J'ai payé — Envoyer pour validation
       </button>
       <button class="btn-ann" onclick="payBack()">← Retour</button>
     </div>
@@ -2039,6 +2046,15 @@ function updateNavAfterLogin(nom) {
 }
 
 // ===== PÉRIODE GRATUITE =====
+/* ===== PAIEMENT MANUEL — À CONFIGURER =====
+   Remplace les numéros ci-dessous par TES vrais numéros qui reçoivent l'argent.
+   Le code admin doit être IDENTIQUE à celui de la fonction valider_paiement() dans Supabase. */
+var PAY_NUMERO_ORANGE = '77 95 98 48';   // <-- TON numéro Orange Money
+var PAY_NUMERO_MOOV   = '72 84 20 24';   // <-- TON numéro Moov Money
+var PAY_MONTANT       = 300;             // montant en F CFA
+var PAY_ADMIN_CODE    = 'FASO_ADMIN_2026'; // <-- même code que dans Supabase
+var currentPayAnnId = null, currentPayNom = null;
+
 var FREE_START = new Date('2026-04-21T00:00:00');
 var FREE_END   = new Date('2026-04-28T00:00:00');
 
@@ -3229,14 +3245,66 @@ async function connecterUser() {
 var currentPayer = '';
 var currentProvider = '';
 
-function pay(nom) {
-  // Toujours gratuit en ce moment — afficher le contact directement
+function pay(nom) { payGate(nom); }
+
+async function payGate(nom) {
   var card = findCardByNom(nom);
-  if (card) {
-    revealContact(card, nom);
-  } else {
-    showToast('🎁 Contact débloqué gratuitement !');
+  var annId = card ? (card.dataset.id || null) : null;
+  // 1. Connexion requise pour tracer le paiement
+  if (!currentUserData || !currentUserData.tel) {
+    showToast('Connecte-toi pour débloquer un contact');
+    if (typeof go === 'function') go('login');
+    return;
   }
+  // 2. Déjà payé et validé par l'admin => on révèle
+  if (annId && await isUnlocked(annId)) {
+    if (card) revealContact(card, nom);
+    return;
+  }
+  // 3. Période gratuite éventuelle
+  if (isFreeperiod()) {
+    if (card) revealContact(card, nom); else showToast('🎁 Contact débloqué gratuitement !');
+    return;
+  }
+  // 4. Sinon : ouvrir le paiement manuel
+  openPayModal(annId, nom);
+}
+
+// Vérifie en base si l'utilisateur a un paiement VALIDÉ pour cette annonce
+async function isUnlocked(annId) {
+  try {
+    var sb = await getSb(); if (!sb || !currentUserData) return false;
+    var { data } = await sb.from('paiements')
+      .select('id').eq('user_tel', currentUserData.tel)
+      .eq('ann_id', annId).eq('statut', 'valide').limit(1);
+    return !!(data && data.length);
+  } catch(e) { return false; }
+}
+
+// Révèle automatiquement les contacts déjà payés (au chargement des listes)
+async function revealPaidContacts() {
+  try {
+    if (!currentUserData || !currentUserData.tel) return;
+    var sb = await getSb(); if (!sb) return;
+    var { data } = await sb.from('paiements')
+      .select('ann_id').eq('user_tel', currentUserData.tel).eq('statut', 'valide');
+    if (!data) return;
+    data.forEach(function(p) {
+      var card = document.querySelector('.ann-card[data-id="' + p.ann_id + '"]');
+      if (card) {
+        var nomEl = card.querySelector('.ann-nom');
+        revealContact(card, nomEl ? nomEl.textContent.trim() : '');
+      }
+    });
+  } catch(e) {}
+}
+
+function openPayModal(annId, nom) {
+  currentPayAnnId = annId;
+  currentPayNom = nom;
+  payGoStep(1);
+  var ov = document.getElementById('o-pay');
+  if (ov) ov.classList.add('on');
 }
 
 function findCardByNom(nom) {
@@ -3278,7 +3346,7 @@ function revealContact(card, nom) {
   }
   // Remplacer le bouton par un badge vert
   if (btn) {
-    btn.outerHTML = '<div style="background:var(--vert3);border:2px solid var(--vert2);border-radius:10px;padding:10px 14px;text-align:center;margin-top:10px">'      + '<div style="font-size:13px;font-weight:700;color:var(--vert)">Contact débloqué — GRATUIT</div>'      + '<div style="font-size:11px;color:var(--txt2);margin-top:3px">Profitez de la période gratuite</div>'      + '</div>'+waHtml;
+    btn.outerHTML = '<div style="background:var(--vert3);border:2px solid var(--vert2);border-radius:10px;padding:10px 14px;text-align:center;margin-top:10px">'      + '<div style="font-size:13px;font-weight:700;color:var(--vert)">✅ Contact débloqué</div>'      + '<div style="font-size:11px;color:var(--txt2);margin-top:3px">Bonne permutation !</div>'      + '</div>'+waHtml;
   }
   showToast('Contact de ' + nom + ' débloqué gratuitement !');
 }
@@ -3303,7 +3371,10 @@ function payChoose(provider) {
   document.getElementById('pay-op-label').textContent  = isOm ? 'Orange Money' : 'Moov Money';
   var btn = document.getElementById('pay-confirm-btn');
   btn.className = isOm ? 'btn-om' : 'btn-mm';
-  document.getElementById('pay-phone').value = '';
+  var dep = document.getElementById('pay-depot-num');
+  if (dep) dep.textContent = isOm ? PAY_NUMERO_ORANGE : PAY_NUMERO_MOOV;
+  var ph = document.getElementById('pay-phone'); if (ph) ph.value = '';
+  var rf = document.getElementById('pay-ref');   if (rf) rf.value = '';
   payGoStep(2);
 }
 
@@ -3312,53 +3383,50 @@ function payBack() {
 }
 
 function payConfirm() {
-  var phone = document.getElementById('pay-phone').value.trim();
+  var phone = (document.getElementById('pay-phone').value || '').trim();
+  var refEl = document.getElementById('pay-ref');
+  var ref   = (refEl ? refEl.value : '').trim();
   if (!phone || phone.replace(/\s/g,'').length < 8) {
-    showToast('⚠️ Entrez un numéro valide (8 chiffres minimum)');
+    showToast('⚠️ Entre le numéro depuis lequel tu as payé (8 chiffres min)');
+    return;
+  }
+  if (!ref || ref.length < 4) {
+    showToast('⚠️ Entre l\'ID de transaction reçu par SMS');
     return;
   }
   payGoStep(3);
-  callPaymentAPI(phone);
+  enregistrerPaiement(phone, ref);
 }
 
-function callPaymentAPI(phone) {
+async function enregistrerPaiement(phone, ref) {
   var ico = document.getElementById('pay-proc-ico');
   var msg = document.getElementById('pay-proc-msg');
   var sub = document.getElementById('pay-proc-sub');
-  ico.textContent = '⏳';
-  msg.textContent = 'Traitement en cours...';
-  sub.textContent = 'Veuillez confirmer sur votre téléphone';
-
-  var endpoint = 'https://api.fasopermut.bf/v1/payment';
-  var payload = {
-    provider: currentProvider,
-    phone: phone.replace(/\s/g,''),
-    amount: 300,
-    reference: 'FP-' + Date.now(),
-    description: 'Déblocage contact: ' + currentPayer
-  };
-
-  fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
-  })
-  .then(function(res) {
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return res.json();
-  })
-  .then(function(data) {
-    if (data.status === 'success' || data.status === 'pending') {
-      paySuccess();
-    } else {
-      payError(data.message || 'Paiement refusé.');
-    }
-  })
-  .catch(function(err) {
-    console.warn('API paiement indisponible, mode démo:', err);
-    setTimeout(paySuccess, 2000);
-  });
+  ico.textContent = '⏳'; msg.textContent = 'Enregistrement...'; sub.textContent = 'Un instant';
+  try {
+    var sb = await getSb();
+    if (!sb) throw new Error('supabase indisponible');
+    var res = await sb.from('paiements').insert({
+      user_tel: currentUserData ? currentUserData.tel : null,
+      ann_id: currentPayAnnId ? Number(currentPayAnnId) : null,
+      ann_nom: currentPayNom || null,
+      provider: currentProvider,
+      payer_phone: phone.replace(/\s/g,''),
+      ref_transaction: ref,
+      montant: PAY_MONTANT,
+      statut: 'en_attente'
+    });
+    if (res && res.error) throw res.error;
+    ico.textContent = '📨';
+    msg.textContent = 'Demande envoyée !';
+    sub.textContent = 'Ton paiement est en cours de vérification. Le contact sera débloqué dès validation.';
+    setTimeout(function(){ cl('o-pay'); showToast('✅ Demande reçue — validation en cours'); }, 2800);
+  } catch(e) {
+    ico.textContent = '❌';
+    msg.textContent = 'Erreur d\'enregistrement';
+    sub.textContent = 'Vérifie ta connexion et réessaie.';
+    setTimeout(function(){ payGoStep(2); }, 2500);
+  }
 }
 
 function paySuccess() {
@@ -3930,29 +3998,31 @@ async function addPoints(delta, reason) {
 function computeMatchScore(ann, user, myAnns) {
   try {
     if (!ann || !user) return 0;
-    // On matche le grade (corps), la région actuelle de l'utilisateur (qui doit être dans les souhaits de l'annonce)
-    // et la région souhaitée par l'utilisateur (qui doit être la région actuelle de l'annonce)
-    var corps = (user.grade || '').split(/[ (—]/)[0];
-    var annCorps = (ann.grade || '').split(/[ (—]/)[0];
-    var score = 0;
-    // Match corps : 30 pts
-    if (corps && annCorps && corps === annCorps) score += 30;
-    // Récupère les régions courantes/souhaitées de l'utilisateur via ses propres annonces
+    // Régions actuelles/souhaitées, disciplines ET grades de l'utilisateur (via ses propres annonces)
     var userCurrentRegs = [];
     var userWishRegs = [];
+    var userDiscs = [];
+    var userGrades = [];
     if (myAnns && myAnns.length) {
       myAnns.forEach(function(m){
         if (m.reg && userCurrentRegs.indexOf(m.reg) === -1) userCurrentRegs.push(m.reg);
+        if (m.disc && userDiscs.indexOf(m.disc) === -1) userDiscs.push(m.disc);
+        if (m.grade && userGrades.indexOf(m.grade) === -1) userGrades.push(m.grade);
         var dests = m.regs_dest || m.regsDest || [];
         dests.forEach(function(r){ if (userWishRegs.indexOf(r) === -1) userWishRegs.push(r); });
       });
     }
-    // L'annonce souhaite une région où l'utilisateur est = match parfait : 35 pts
+    // RÈGLE MÉTIER : même GRADE (corps) ET même DISCIPLINE obligatoires.
+    // Un CAPES ne permute pas avec un CAPCEG ; un CAPES Maths ne permute pas avec un CAPES SVT.
+    if (userGrades.length && ann.grade && userGrades.indexOf(ann.grade) === -1) return 0;
+    if (userDiscs.length  && ann.disc  && userDiscs.indexOf(ann.disc)   === -1) return 0;
+    var score = 15; // même grade + même discipline confirmés
     var annDests = ann.regs_dest || ann.regsDest || [];
-    var matchDir1 = userCurrentRegs.some(function(r){ return annDests.indexOf(r) !== -1; });
-    if (matchDir1) score += 35;
-    // L'utilisateur souhaite une région où l'annonce est = match parfait : 35 pts
-    if (ann.reg && userWishRegs.indexOf(ann.reg) !== -1) score += 35;
+    // L'annonce veut aller là où l'utilisateur est
+    if (userCurrentRegs.some(function(r){ return annDests.indexOf(r) !== -1; })) score += 45;
+    // L'utilisateur veut aller là où l'annonce est
+    if (ann.reg && userWishRegs.indexOf(ann.reg) !== -1) score += 45;
+    // 15 = même discipline seule (ne s'affiche pas), 60 = un sens (piste), 100 = bidirectionnel (permutation parfaite)
     return Math.min(100, score);
   } catch(e) { return 0; }
 }
