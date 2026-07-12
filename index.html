@@ -1180,6 +1180,7 @@ footer b{color:#4fc878}
       <button class="adm-tab-btn" onclick="adminTabSwitch('match',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">Permutations</button>
       <button class="adm-tab-btn" onclick="adminTabSwitch('alert',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">⚠️ Alertes</button>
       <button class="adm-tab-btn" onclick="adminTabSwitch('wa',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">📲 WA</button>
+      <button class="adm-tab-btn" onclick="adminTabSwitch('pay',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">💰 Paiements</button>
     </div>
 
     <!-- Pane VUE D'ENSEMBLE -->
@@ -1239,6 +1240,15 @@ footer b{color:#4fc878}
     <!-- Pane ALERTES -->
     <div class="adm-pane" id="adm-pane-alert" style="display:none">
       <div id="adm-alert-list"></div>
+    </div>
+
+    <!-- Pane PAIEMENTS -->
+    <div class="adm-pane" id="adm-pane-pay" style="display:none">
+      <div style="background:#fff8e1;border-left:3px solid var(--orange);padding:10px;border-radius:8px;margin-bottom:10px;font-size:11px;color:#5a3c00">
+        <b>Paiements à valider.</b> Vérifie sur ton téléphone (Orange/Moov) que l'argent est bien arrivé avec le bon ID, puis clique <b>Valider</b> — le contact se débloque pour l'utilisateur.
+        <button onclick="adminRenderPaiements()" style="border:none;background:none;color:var(--orange);font-weight:700;cursor:pointer;text-decoration:underline;font-size:11px;margin-left:4px">Actualiser</button>
+      </div>
+      <div id="adm-pay-list"></div>
     </div>
 
     <!-- Pane WHATSAPP QUEUE -->
@@ -5430,6 +5440,76 @@ function adminTabSwitch(tab, ev) {
   }
   // Charge auto de la file WhatsApp
   if (tab === 'wa') { try { loadWaQueue(); } catch(e){} }
+  // Charge auto les paiements à valider
+  if (tab === 'pay') { try { adminRenderPaiements(); } catch(e){} }
+}
+
+// ===== ADMIN : PAIEMENTS À VALIDER =====
+async function adminRenderPaiements() {
+  var box = document.getElementById('adm-pay-list');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;color:#888;font-size:12px;padding:14px">⏳ Chargement...</div>';
+  try {
+    var sb = await getSb(); if (!sb) { box.innerHTML = ''; return; }
+    var { data } = await sb.from('paiements').select('*').order('created_at', { ascending: false }).limit(100);
+    if (!data || !data.length) { box.innerHTML = '<div style="text-align:center;color:#888;font-size:12px;padding:14px">Aucun paiement pour le moment.</div>'; return; }
+    var enAttente = data.filter(function(p){ return p.statut === 'en_attente'; });
+    var autres = data.filter(function(p){ return p.statut !== 'en_attente'; });
+    var html = '<div style="font-size:11px;font-weight:700;color:var(--orange);margin-bottom:6px">À VALIDER (' + enAttente.length + ')</div>';
+    if (!enAttente.length) html += '<div style="font-size:11px;color:#888;margin-bottom:10px">Rien en attente.</div>';
+    enAttente.forEach(function(p){ html += paymentRow(p, true); });
+    if (autres.length) {
+      html += '<div style="font-size:11px;font-weight:700;color:var(--txt2);margin:12px 0 6px">HISTORIQUE</div>';
+      autres.slice(0, 40).forEach(function(p){ html += paymentRow(p, false); });
+    }
+    box.innerHTML = html;
+  } catch(e) { box.innerHTML = '<div style="color:#c00;font-size:12px;padding:10px">Erreur de chargement.</div>'; }
+}
+
+function paymentRow(p, actionable) {
+  var op = p.provider === 'orange' ? '🟠 Orange' : (p.provider === 'moov' ? '🔵 Moov' : (p.provider || '—'));
+  var when = p.created_at ? new Date(p.created_at).toLocaleString('fr-FR') : '';
+  var color = p.statut === 'valide' ? 'var(--vert)' : (p.statut === 'rejete' ? '#c00' : 'var(--orange)');
+  var s = '<div style="background:#fff;border:1px solid var(--gris2);border-left:3px solid '+color+';border-radius:8px;padding:10px 12px;margin-bottom:8px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
+    +   '<div style="font-size:13px;font-weight:800;color:#222">' + escH(p.montant || 300) + ' F · ' + op + '</div>'
+    +   '<div style="font-size:10px;font-weight:800;color:'+color+';text-transform:uppercase">' + escH(p.statut) + '</div>'
+    + '</div>'
+    + '<div style="font-size:11px;color:var(--txt2);margin-top:4px">Contact : <b>' + escH(p.ann_nom || ('#'+(p.ann_id||'?'))) + '</b></div>'
+    + '<div style="font-size:11px;color:var(--txt2)">Payeur : <b>' + escH(p.payer_phone || '—') + '</b> · Acheteur : ' + escH(p.user_tel || '—') + '</div>'
+    + '<div style="font-size:11px;color:var(--txt2)">ID transaction : <b>' + escH(p.ref_transaction || '—') + '</b></div>'
+    + '<div style="font-size:10px;color:#999;margin-top:2px">' + escH(when) + '</div>';
+  if (actionable) {
+    s += '<div style="display:flex;gap:6px;margin-top:8px">'
+      + '<button onclick="adminValiderPaiement(' + p.id + ')" style="flex:1;background:var(--vert2);color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">✅ Valider</button>'
+      + '<button onclick="adminRejeterPaiement(' + p.id + ')" style="background:#fff;color:#c00;border:1px solid #f0c0c0;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer">Rejeter</button>'
+      + '</div>';
+  }
+  s += '</div>';
+  return s;
+}
+
+async function adminValiderPaiement(id) {
+  try {
+    var sb = await getSb(); if (!sb) return;
+    var { data, error } = await sb.rpc('valider_paiement', { p_id: id, p_code: PAY_ADMIN_CODE });
+    if (error) { showToast('❌ Erreur : ' + error.message); return; }
+    if (data === 'valide') { showToast('✅ Paiement validé — contact débloqué'); }
+    else if (data === 'code_invalide') { showToast('❌ Code admin incorrect'); }
+    else { showToast('⚠️ ' + data); }
+    adminRenderPaiements();
+  } catch(e) { showToast('❌ Erreur de validation'); }
+}
+
+async function adminRejeterPaiement(id) {
+  try {
+    var sb = await getSb(); if (!sb) return;
+    var { data, error } = await sb.rpc('valider_paiement', { p_id: id, p_code: PAY_ADMIN_CODE, p_statut: 'rejete' });
+    if (error) { showToast('❌ ' + error.message); return; }
+    if (data === 'code_invalide') { showToast('❌ Code admin incorrect'); }
+    else { showToast('Paiement rejeté'); }
+    adminRenderPaiements();
+  } catch(e) { showToast('❌ Erreur'); }
 }
 
 // ============================================================
