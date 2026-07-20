@@ -1159,6 +1159,12 @@ footer b{color:#4fc878}
   <!-- Déconnexion : gérée par le bouton dans la nav principale -->
   <div id="logout-section" style="display:none"></div>
 
+  <!-- MON ABONNEMENT (visible quand connecté) -->
+  <div class="co-card" id="sub-status-card" style="display:none">
+    <h3 style="margin-bottom:10px">⭐ Mon abonnement</h3>
+    <div id="sub-status-content" style="font-size:12.5px;color:var(--txt2);line-height:1.5">Vérification...</div>
+  </div>
+
   <!-- DÉFI DE PARTAGE : 10 groupes = 1 mois premium gratuit -->
   <div class="co-card" id="share-challenge-card" style="display:none">
     <h3 style="margin-bottom:10px">Défi partage</h3>
@@ -3031,6 +3037,9 @@ function go(id) {
     if(section) section.style.display = isLoggedIn ? 'block' : 'none';
     var sch = document.getElementById('share-challenge-card');
     if(sch) sch.style.display = isLoggedIn ? 'block' : 'none';
+    var subc = document.getElementById('sub-status-card');
+    if(subc) subc.style.display = isLoggedIn ? 'block' : 'none';
+    if (isLoggedIn) { try { renderSubCard(); } catch(e){} }
     // Masquer le formulaire connexion/inscription si déjà connecté
     var coCard = document.querySelector('#s-co .co-card');
     if (coCard) coCard.style.display = isLoggedIn ? 'none' : 'block';
@@ -3503,6 +3512,29 @@ async function checkAbonnement(force) {
   } catch(e) { return null; }
 }
 function fpIsAbonne(){ return !!(fpSubUntil && fpSubUntil > Date.now()); }
+
+async function renderSubCard() {
+  var box = document.getElementById('sub-status-content');
+  if (!box) return;
+  box.innerHTML = '⏳ Vérification...';
+  try { await checkAbonnement(true); } catch(e){}
+  if (fpIsAbonne()) {
+    var d = new Date(fpSubUntil);
+    var jours = Math.max(0, Math.ceil((fpSubUntil - Date.now()) / 86400000));
+    var soon = jours <= 30;
+    box.innerHTML = '<div style="background:' + (soon ? '#fff8e1' : 'var(--vert3)') + ';border-radius:10px;padding:12px;border-left:3px solid ' + (soon ? 'var(--orange)' : 'var(--vert2)') + '">'
+      + '<div style="font-size:14px;font-weight:800;color:' + (soon ? '#b26a00' : 'var(--vert)') + '">' + (soon ? '⏳ Ton abonnement expire bientôt' : '✅ Abonnement actif') + '</div>'
+      + '<div style="margin-top:4px">Tous les contacts sont débloqués jusqu\'au <b>' + d.toLocaleDateString('fr-FR') + '</b> (' + jours + ' jours restants).</div>'
+      + (soon ? '<button onclick="openPayModal(null, null)" style="margin-top:10px;width:100%;background:var(--orange);color:#fff;border:none;border-radius:8px;padding:10px;font-weight:800;font-size:13px;cursor:pointer">🔁 Renouveler — 1 000 F / an</button>' : '')
+      + '</div>';
+  } else {
+    box.innerHTML = '<div style="background:#fff;border:1px dashed var(--gris2);border-radius:10px;padding:12px">'
+      + '<div style="font-size:13px;font-weight:800;color:var(--txt)">Pas encore abonné</div>'
+      + '<div style="margin-top:4px">Débloque <b>tous les contacts pendant 1 an</b> et organise ta permutation directement avec tes collègues.</div>'
+      + '<button onclick="openPayModal(null, null)" style="margin-top:10px;width:100%;background:var(--orange);color:#fff;border:none;border-radius:8px;padding:10px;font-weight:800;font-size:13px;cursor:pointer">⭐ S\'abonner — 1 000 F / an</button>'
+      + '</div>';
+  }
+}
 
 // Révèle automatiquement les contacts déjà payés (au chargement des listes)
 async function revealPaidContacts() {
@@ -5713,7 +5745,21 @@ async function adminRenderPaiements() {
     if (!data || !data.length) { box.innerHTML = '<div style="text-align:center;color:#888;font-size:12px;padding:14px">Aucun paiement pour le moment.</div>'; return; }
     var enAttente = data.filter(function(p){ return p.statut === 'en_attente'; });
     var autres = data.filter(function(p){ return p.statut !== 'en_attente'; });
-    var html = '<div style="font-size:11px;font-weight:700;color:var(--orange);margin-bottom:6px">À VALIDER (' + enAttente.length + ')</div>';
+    var totalFcfa = 0, absSet = {};
+    var nowTs = Date.now();
+    data.forEach(function(p){
+      if (p.statut === 'valide') {
+        totalFcfa += (p.montant || 0);
+        var base = p.valide_at || p.created_at;
+        if ((p.montant || 0) >= 1000 && base && (nowTs - new Date(base).getTime()) < 365 * 86400000 && p.user_tel) absSet[p.user_tel] = 1;
+      }
+    });
+    var html = '<div style="display:flex;gap:8px;margin-bottom:10px">'
+      + '<div style="flex:1;background:var(--vert3);border-radius:10px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:var(--vert)">' + totalFcfa.toLocaleString('fr-FR') + ' F</div><div style="font-size:10px;color:var(--txt2)">Total encaissé</div></div>'
+      + '<div style="flex:1;background:#fff8e1;border-radius:10px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#b26a00">' + Object.keys(absSet).length + '</div><div style="font-size:10px;color:var(--txt2)">Abonnés actifs</div></div>'
+      + '<div style="flex:1;background:#fde8e8;border-radius:10px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#c00">' + enAttente.length + '</div><div style="font-size:10px;color:var(--txt2)">En attente</div></div>'
+      + '</div>'
+      + '<div style="font-size:11px;font-weight:700;color:var(--orange);margin-bottom:6px">À VALIDER (' + enAttente.length + ')</div>';
     if (!enAttente.length) html += '<div style="font-size:11px;color:#888;margin-bottom:10px">Rien en attente.</div>';
     enAttente.forEach(function(p){ html += paymentRow(p, true); });
     if (autres.length) {
