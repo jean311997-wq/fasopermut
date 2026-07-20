@@ -502,6 +502,38 @@ footer b{color:#4fc878}
 .pay-pane{display:none}
 .pay-pane.on{display:block}
 .fi input.phone-err{border-color:#e53935}
+
+/* ===== Vitrine 10/10 ===== */
+.rvl{opacity:0;transform:translateY(16px);transition:opacity .55s ease,transform .55s ease}
+.rvl.in{opacity:1;transform:none}
+.sec-t{font-size:16px;font-weight:800;color:#fff;margin:24px 0 3px;text-align:center}
+.sec-s{font-size:11px;color:#bcd6ea;text-align:center;margin-bottom:12px}
+.hiw{display:flex;flex-direction:column;gap:10px;text-align:left}
+.hiw-c{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start}
+.hiw-n{width:26px;height:26px;min-width:26px;border-radius:50%;background:#f57c00;color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
+.hiw-tt{font-size:13px;font-weight:800;color:#fff}
+.hiw-tx{font-size:11.5px;color:#cfe2f2;margin-top:2px;line-height:1.45}
+.demo-card{background:#fff;border-radius:12px;padding:12px 14px;text-align:left;margin-top:10px;position:relative;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.demo-badge{position:absolute;top:10px;right:10px;background:#e8f5e9;color:#1b7e3c;font-size:10px;font-weight:800;border-radius:20px;padding:3px 8px}
+.price-box{background:linear-gradient(135deg,#f57c00,#ff9d3f);border-radius:14px;padding:16px;margin-top:8px;color:#fff;box-shadow:0 6px 18px rgba(245,124,0,.35);text-align:center}
+.price-m{font-size:30px;font-weight:800}
+.price-y{font-size:12px;opacity:.95;font-weight:700}
+.price-l{font-size:11.5px;text-align:left;margin-top:10px;line-height:1.75}
+.faq-i{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:10px;margin-bottom:8px;overflow:hidden;text-align:left}
+.faq-q{padding:11px 13px;font-size:12.5px;font-weight:700;color:#fff;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.faq-q .chv{transition:transform .3s;font-size:10px}
+.faq-i.open .chv{transform:rotate(180deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease;font-size:11.5px;color:#cfe2f2;line-height:1.55;padding:0 13px}
+.faq-i.open .faq-a{max-height:240px;padding:0 13px 12px}
+.foot{margin-top:24px;padding:16px 8px 6px;border-top:1px solid rgba(255,255,255,.15);font-size:11px;color:#9fbdd4;text-align:center}
+.foot a{color:#cfe2f2;text-decoration:none;font-weight:700}
+.wa-sup{display:inline-flex;align-items:center;gap:7px;background:#25D366;color:#fff;font-weight:800;font-size:12.5px;border-radius:24px;padding:9px 16px;text-decoration:none;margin-top:10px}
+.ob-dots{display:flex;gap:6px;justify-content:center;margin:12px 0 4px}
+.ob-dot{width:8px;height:8px;border-radius:50%;background:#d8e2ea;transition:.3s}
+.ob-dot.on{background:#f57c00;width:20px;border-radius:5px}
+.legal-txt{font-size:12px;color:#444;line-height:1.6;text-align:left;max-height:55vh;overflow-y:auto;padding-right:4px}
+.legal-txt h4{font-size:13px;margin:10px 0 4px;color:#222}
+
 </style>
 </head>
 <body>
@@ -566,6 +598,62 @@ footer b{color:#4fc878}
   </div>
 
   <div class="note1">✅ Inscription gratuite · 🔒 Contacts sécurisés · 📱 Compatible 3G</div>
+
+  <!-- ===== COMMENT ÇA MARCHE ===== -->
+  <div class="rvl" style="width:100%">
+    <div class="sec-t">🚀 Comment ça marche ?</div>
+    <div class="sec-s">Ta permutation en 3 étapes simples</div>
+    <div class="hiw">
+      <div class="hiw-c"><div class="hiw-n">1</div><div><div class="hiw-tt">Publie ton annonce — gratuit</div><div class="hiw-tx">Ton grade, ta discipline, ton poste actuel et tes destinations souhaitées. 2 minutes suffisent.</div></div></div>
+      <div class="hiw-c"><div class="hiw-n">2</div><div><div class="hiw-tt">Le moteur trouve ton binôme</div><div class="hiw-tx">Même grade, même discipline, destinations croisées : seules les permutations réellement possibles reçoivent le badge 🎯.</div></div></div>
+      <div class="hiw-c"><div class="hiw-n">3</div><div><div class="hiw-tt">Débloque le contact et permutez</div><div class="hiw-tx">Appelle ton collègue ou écris-lui sur WhatsApp, entendez-vous, puis déposez vos demandes ensemble.</div></div></div>
+    </div>
+    <div class="demo-card">
+      <div class="demo-badge">🎯 100% compatible</div>
+      <div style="font-size:13px;font-weight:800;color:#222">TRAORÉ M. — PCLC · Français</div>
+      <div style="font-size:11.5px;color:#555;margin-top:3px">📍 Kadiogo → souhaite : Guiriko, Nando</div>
+      <div style="font-size:11px;color:#1b7e3c;font-weight:700;margin-top:6px">↔ Permutation croisée détectée avec ZONGO A. (PCLC · Français, Guiriko → Kadiogo)</div>
+      <div style="font-size:10px;color:#999;margin-top:5px">Illustration du fonctionnement du moteur de matching</div>
+    </div>
+  </div>
+
+  <!-- ===== TARIF ===== -->
+  <div class="rvl" style="width:100%">
+    <div class="sec-t">💳 Un tarif simple et transparent</div>
+    <div class="sec-s">Pas d'abonnement mensuel. Pas de frais cachés.</div>
+    <div class="price-box">
+      <div class="price-m">1 000 F CFA <span class="price-y">/ an</span></div>
+      <div class="price-y">Accès à TOUS les contacts pendant 12 mois</div>
+      <div class="price-l">✅ Contacts illimités pendant 1 an<br>✅ Badge 🎯 : uniquement de vraies permutations (même grade, même discipline)<br>✅ Paiement Orange Money ou Moov Money en 2 minutes<br>✅ Inscription et publication d'annonce toujours gratuites</div>
+      <button onclick="go('s3')" style="width:100%;margin-top:12px;background:#fff;color:#f57c00;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer">Voir les annonces →</button>
+    </div>
+  </div>
+
+  <!-- ===== FAQ ===== -->
+  <div class="rvl" style="width:100%">
+    <div class="sec-t">❓ Questions fréquentes</div>
+    <div class="sec-s">Tout ce que tu dois savoir avant de te lancer</div>
+    <div class="faq-i"><div class="faq-q" onclick="faqToggle(this)"><span>C'est quoi FasoPermut ?</span><span class="chv">▼</span></div><div class="faq-a">La plateforme burkinabè qui met en relation les enseignants et fonctionnaires cherchant une permutation de poste. Tu publies ton annonce, le moteur trouve les collègues compatibles, vous vous contactez et permutez.</div></div>
+    <div class="faq-i"><div class="faq-q" onclick="faqToggle(this)"><span>Combien ça coûte ?</span><span class="chv">▼</span></div><div class="faq-a">L'inscription et la publication sont <b>gratuites</b>. L'accès aux contacts des collègues coûte <b>1 000 F CFA par an</b> — tous les contacts, pendant 12 mois, sans autre frais.</div></div>
+    <div class="faq-i"><div class="faq-q" onclick="faqToggle(this)"><span>Comment payer ?</span><span class="chv">▼</span></div><div class="faq-a">Par <b>Orange Money</b> ou <b>Moov Money</b> : tu envoies 1 000 F au numéro indiqué, tu saisis ton numéro payeur et l'ID de transaction reçu par SMS, et ton abonnement est activé après vérification (rapide).</div></div>
+    <div class="faq-i"><div class="faq-q" onclick="faqToggle(this)"><span>Comment le moteur choisit-il les permutations ?</span><span class="chv">▼</span></div><div class="faq-a">Règle stricte : <b>même grade</b> (un PCLC ne permute pas avec un PCCEG) et <b>même discipline</b> (Maths ≠ SVT), avec des destinations croisées. Le badge 🎯 n'apparaît que pour de vraies permutations possibles.</div></div>
+    <div class="faq-i"><div class="faq-q" onclick="faqToggle(this)"><span>Mes informations sont-elles protégées ?</span><span class="chv">▼</span></div><div class="faq-a">Oui. Tes coordonnées sont <b>masquées par défaut</b> et visibles uniquement des abonnés. Ton code secret est vérifié côté serveur et illisible, même par nous. Chaque paiement est validé manuellement contre la fraude.</div></div>
+    <div class="faq-i"><div class="faq-q" onclick="faqToggle(this)"><span>Besoin d'aide ?</span><span class="chv">▼</span></div><div class="faq-a">Notre support répond directement sur WhatsApp : clique sur le bouton vert en bas de page. Réponse rapide, en français.</div></div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <div class="rvl foot" style="width:100%">
+    <div style="font-weight:800;color:#fff;font-size:13px">FasoPermut</div>
+    <div style="margin:4px 0 2px">La plateforme des permutations entre enseignants du Burkina Faso.</div>
+    <a class="wa-sup" href="https://wa.me/22677959848?text=Bonjour%20FasoPermut%2C%20j%27ai%20besoin%20d%27aide" target="_blank" rel="noopener">💬 Support WhatsApp direct</a>
+    <div style="margin-top:12px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <a href="#" onclick="fpOpen('o-about');return false">À propos</a>
+      <a href="#" onclick="fpOpen('o-cgu');return false">CGU</a>
+      <a href="#" onclick="fpOpen('o-priv');return false">Confidentialité</a>
+    </div>
+    <div style="margin-top:10px;color:#7fa0b8">© 2026 FasoPermut — Fait avec 💚 au Burkina Faso</div>
+  </div>
+
 
 </div>
 
@@ -1275,6 +1363,73 @@ footer b{color:#4fc878}
 </div>
 
 <!-- ===== MODALE PAIEMENT 3 ÉTAPES ===== -->
+
+<!-- ===== ONBOARDING 30 SECONDES ===== -->
+<div class="overlay" id="o-onboard">
+  <div class="modal" style="text-align:center">
+    <div id="ob-p1">
+      <div style="font-size:38px">👋</div>
+      <div style="font-size:16px;font-weight:800;color:#222;margin-top:6px">Bienvenue sur FasoPermut !</div>
+      <div style="font-size:12.5px;color:#555;margin-top:8px;line-height:1.55">La plateforme qui aide les enseignants du Burkina à <b>rentrer enseigner près des leurs</b> grâce à la permutation entre collègues.</div>
+    </div>
+    <div id="ob-p2" style="display:none">
+      <div style="font-size:38px">🎯</div>
+      <div style="font-size:16px;font-weight:800;color:#222;margin-top:6px">Un moteur qui trouve ton binôme</div>
+      <div style="font-size:12.5px;color:#555;margin-top:8px;line-height:1.55">Publie ton annonce (gratuit) : le moteur détecte les collègues de <b>même grade et même discipline</b> qui veulent aller là où tu es — et inversement.</div>
+    </div>
+    <div id="ob-p3" style="display:none">
+      <div style="font-size:38px">🤝</div>
+      <div style="font-size:16px;font-weight:800;color:#222;margin-top:6px">Contacte et permute</div>
+      <div style="font-size:12.5px;color:#555;margin-top:8px;line-height:1.55">Avec l'abonnement à <b>1 000 F / an</b>, débloque tous les contacts pendant 12 mois et organise ta permutation directement avec ton collègue.</div>
+    </div>
+    <div class="ob-dots"><span class="ob-dot on" id="ob-d1"></span><span class="ob-dot" id="ob-d2"></span><span class="ob-dot" id="ob-d3"></span></div>
+    <button class="btn-om" id="ob-next" onclick="obNext()" style="margin-top:6px">Suivant →</button>
+    <button class="btn-ann" onclick="obDone()">Passer</button>
+  </div>
+</div>
+
+<!-- ===== À PROPOS ===== -->
+<div class="overlay" id="o-about">
+  <div class="modal">
+    <div class="modal-hdr"><div class="titre">À propos de FasoPermut</div></div>
+    <div class="legal-txt">
+      FasoPermut est né d'un constat simple : chaque année, des centaines d'enseignants burkinabè cherchent à se rapprocher de leur famille, mais trouver un collègue avec qui permuter relève du hasard.<br><br>
+      Notre mission : rendre la permutation <b>simple, rapide et fiable</b>, en connectant automatiquement les collègues compatibles (même grade, même discipline, destinations croisées) partout au Burkina Faso.<br><br>
+      <b>Contact :</b> support WhatsApp direct depuis le bouton vert de l'accueil.
+    </div>
+    <button class="btn-ann" onclick="cl('o-about')" style="margin-top:12px">Fermer</button>
+  </div>
+</div>
+
+<!-- ===== CGU ===== -->
+<div class="overlay" id="o-cgu">
+  <div class="modal">
+    <div class="modal-hdr"><div class="titre">Conditions Générales d'Utilisation</div></div>
+    <div class="legal-txt">
+      <h4>1. Objet</h4>FasoPermut est une plateforme de mise en relation entre enseignants et fonctionnaires cherchant une permutation de poste au Burkina Faso. Elle ne se substitue pas aux procédures administratives officielles de mutation.
+      <h4>2. Inscription</h4>L'inscription est gratuite. L'utilisateur s'engage à fournir des informations exactes (nom, téléphone, grade, discipline, poste). Tout compte contenant des informations frauduleuses peut être suspendu.
+      <h4>3. Abonnement</h4>L'accès aux coordonnées des autres utilisateurs nécessite un abonnement de 1 000 F CFA valable 12 mois, payable par Orange Money ou Moov Money. L'abonnement est activé après vérification du paiement. Il n'est ni remboursable ni transférable.
+      <h4>4. Responsabilité</h4>FasoPermut facilite la mise en relation mais ne garantit pas l'aboutissement administratif d'une permutation, qui dépend des autorités compétentes. Les échanges entre utilisateurs relèvent de leur seule responsabilité.
+      <h4>5. Comportement</h4>Tout usage abusif (harcèlement, fausses annonces, revente de contacts) entraîne la suppression du compte sans remboursement.
+    </div>
+    <button class="btn-ann" onclick="cl('o-cgu')" style="margin-top:12px">Fermer</button>
+  </div>
+</div>
+
+<!-- ===== CONFIDENTIALITÉ ===== -->
+<div class="overlay" id="o-priv">
+  <div class="modal">
+    <div class="modal-hdr"><div class="titre">Politique de Confidentialité</div></div>
+    <div class="legal-txt">
+      <h4>Données collectées</h4>Nom, numéro de téléphone, grade, discipline, poste actuel et destinations souhaitées — uniquement ce qui est nécessaire au service de permutation.
+      <h4>Utilisation</h4>Tes coordonnées sont <b>masquées par défaut</b> et ne sont visibles que des utilisateurs abonnés. Nous ne vendons jamais tes données à des tiers.
+      <h4>Sécurité</h4>Ton code secret est vérifié côté serveur et stocké de façon sécurisée. Les paiements sont validés manuellement pour prévenir la fraude.
+      <h4>Tes droits</h4>Tu peux modifier ou supprimer ton annonce et ton compte à tout moment depuis ton profil. Pour toute demande : support WhatsApp.
+    </div>
+    <button class="btn-ann" onclick="cl('o-priv')" style="margin-top:12px">Fermer</button>
+  </div>
+</div>
+
 <div class="overlay" id="o-pay">
   <div class="modal">
     <!-- Steps indicator -->
@@ -1289,12 +1444,12 @@ footer b{color:#4fc878}
     <!-- Étape 1 : Choisir opérateur -->
     <div class="pay-pane on" id="pp1">
       <div class="modal-hdr">
-        <div class="titre">💳 Débloquer les contacts</div>
-        <div class="sous" id="pay-lbl">Accès aux coordonnées de l'enseignant</div>
+        <div class="titre">💳 Abonnement FasoPermut</div>
+        <div class="sous" id="pay-lbl">1 an d'accès à tous les contacts</div>
       </div>
       <div class="modal-mont">
-        <div class="m">300 F CFA</div>
-        <div class="ml">Paiement unique — Accès immédiat</div>
+        <div class="m">1 000 F CFA <span style="font-size:13px;font-weight:700">/ an</span></div>
+        <div class="ml">Abonnement annuel — TOUS les contacts pendant 12 mois</div>
       </div>
       <button class="btn-om" onclick="payChoose('orange')">
         <div class="pay-ic om-c">OM</div><span>Orange Money</span>
@@ -1312,7 +1467,7 @@ footer b{color:#4fc878}
         <div class="sous">2 étapes simples</div>
       </div>
       <div style="background:#fff8e1;border:1px solid var(--orange);border-radius:10px;padding:12px 14px;margin:12px 0;font-size:13px;color:#5a3c00">
-        <div style="font-weight:800;margin-bottom:4px">1) Envoie 300 F CFA à ce numéro :</div>
+        <div style="font-weight:800;margin-bottom:4px">1) Envoie 1 000 F CFA à ce numéro :</div>
         <div style="font-size:21px;font-weight:800;letter-spacing:1px;color:var(--orange)" id="pay-depot-num">00 00 00 00</div>
         <div style="font-size:11px;color:#7a5c00;margin-top:4px">via <span id="pay-op-label">Orange Money</span></div>
       </div>
@@ -2061,7 +2216,7 @@ function updateNavAfterLogin(nom) {
    Le code admin doit être IDENTIQUE à celui de la fonction valider_paiement() dans Supabase. */
 var PAY_NUMERO_ORANGE = '77 95 98 48';   // <-- TON numéro Orange Money
 var PAY_NUMERO_MOOV   = '72 84 20 24';   // <-- TON numéro Moov Money
-var PAY_MONTANT       = 300;             // montant en F CFA
+var PAY_MONTANT       = 1000;             // montant en F CFA
 var PAY_ADMIN_CODE    = 'FASO_ADMIN_2026'; // <-- même code que dans Supabase
 var currentPayAnnId = null, currentPayNom = null;
 
@@ -2090,7 +2245,7 @@ function renderFreeBanner() {
   } else if (new Date() >= FREE_END) {
     el.innerHTML = '<div class="free-banner ended">'
       + '<span class="ico">🔒</span>'
-      + '<div><b>Période gratuite terminée</b><br>Le déblocage des contacts est à <b>300 F CFA</b> par contact.</div>'
+      + '<div><b>Période gratuite terminée</b><br>L\'accès aux contacts est à <b>1 000 F CFA / an</b> — tous les contacts débloqués pendant 12 mois.</div>'
       + '</div>';
   } else {
     el.innerHTML = '';
@@ -3280,14 +3435,23 @@ async function payGate(nom) {
   openPayModal(annId, nom);
 }
 
-// Vérifie en base si l'utilisateur a un paiement VALIDÉ pour cette annonce
+// Accès débloqué si : abonnement annuel VALIDÉ (< 12 mois) OU déblocage historique de cette annonce
 async function isUnlocked(annId) {
   try {
     var sb = await getSb(); if (!sb || !currentUserData) return false;
     var { data } = await sb.from('paiements')
-      .select('id').eq('user_tel', currentUserData.tel)
-      .eq('ann_id', annId).eq('statut', 'valide').limit(1);
-    return !!(data && data.length);
+      .select('id,ann_id,montant,statut,created_at,valide_at')
+      .eq('user_tel', currentUserData.tel).eq('statut', 'valide');
+    if (!data || !data.length) return false;
+    var now = Date.now();
+    for (var i = 0; i < data.length; i++) {
+      var p = data[i];
+      var base = p.valide_at || p.created_at;
+      var actif = base && (now - new Date(base).getTime()) < 365 * 86400000;
+      if (actif && (p.montant || 0) >= 1000) return true;               // abonnement annuel
+      if (annId != null && String(p.ann_id) === String(annId)) return true; // ancien déblocage 300F
+    }
+    return false;
   } catch(e) { return false; }
 }
 
@@ -3454,7 +3618,7 @@ async function enregistrerPaiement(phone, ref) {
     if (res && res.error) throw res.error;
     ico.textContent = '📨';
     msg.textContent = 'Demande envoyée !';
-    sub.textContent = 'Ton paiement est en cours de vérification. Le contact sera débloqué dès validation.';
+    sub.textContent = 'Ton paiement est en cours de vérification. Ton abonnement (1 an, tous les contacts) sera activé dès validation.';
     setTimeout(function(){ cl('o-pay'); showToast('✅ Demande reçue — validation en cours'); }, 2800);
   } catch(e) {
     ico.textContent = '❌';
@@ -5324,7 +5488,7 @@ function adminRenderAlerts(users, annonces) {
   // 1. Fin période gratuite
   var daysLeft = Math.ceil((FREE_END.getTime() - now) / (1000*60*60*24));
   if (daysLeft > 0) alerts.push({ type:'info', icon:'⏰', msg:'Période gratuite : fin dans '+daysLeft+' jour(s) (28 avril 2026)' });
-  else alerts.push({ type:'ok', icon:'💰', msg:'Période payante active (300 FCFA par contact)' });
+  else alerts.push({ type:'ok', icon:'💰', msg:'Période payante active (1 000 FCFA / an)' });
 
   // 2. Users avec +3 annonces
   var countByTel = {};
@@ -5908,6 +6072,37 @@ setInterval(function(){
   try { fpInitMatchScore(); } catch(e) {}
 }, 4000);
 
+
+/* ===== Vitrine 10/10 : FAQ, révélation au scroll, onboarding ===== */
+function fpOpen(id){ var el = document.getElementById(id); if (el) el.classList.add('on'); }
+function faqToggle(q){ try { q.parentNode.classList.toggle('open'); } catch(e){} }
+try {
+  var _rvlObs = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('in'); _rvlObs.unobserve(e.target); } });
+  }, { threshold: .12 });
+  document.querySelectorAll('.rvl').forEach(function(el){ _rvlObs.observe(el); });
+} catch(e) { document.querySelectorAll('.rvl').forEach(function(el){ el.classList.add('in'); }); }
+
+var obStep = 1;
+function obGo(n){
+  obStep = n;
+  for (var i = 1; i <= 3; i++) {
+    var p = document.getElementById('ob-p'+i); if (p) p.style.display = (i === n ? 'block' : 'none');
+    var d = document.getElementById('ob-d'+i); if (d) d.className = 'ob-dot' + (i === n ? ' on' : '');
+  }
+  var b = document.getElementById('ob-next'); if (b) b.textContent = (n === 3 ? 'Commencer 🚀' : 'Suivant →');
+}
+function obNext(){ if (obStep < 3) { obGo(obStep + 1); } else { obDone(true); } }
+function obDone(goAnn){
+  try { localStorage.setItem('fp_ob_v1', '1'); } catch(e){}
+  cl('o-onboard');
+  if (goAnn === true) { try { go('s3'); } catch(e){} }
+}
+try {
+  if (!localStorage.getItem('fp_ob_v1')) {
+    setTimeout(function(){ fpOpen('o-onboard'); obGo(1); }, 1200);
+  }
+} catch(e){}
 </script>
 
 <!-- Modal WhatsApp opt-in : recevoir alertes WhatsApp -->
