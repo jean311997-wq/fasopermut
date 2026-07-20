@@ -2237,6 +2237,14 @@ function daysLeftFree() {
 function renderFreeBanner() {
   var el = document.getElementById('free-period-banner');
   if (!el) return;
+  if (typeof fpIsAbonne === 'function' && fpIsAbonne()) {
+    var dFin = new Date(fpSubUntil);
+    el.innerHTML = '<div class="free-banner">'
+      + '<span class="ico">⭐</span>'
+      + '<div><b>Abonnement actif</b><br>Tous les contacts sont débloqués jusqu\'au <b>' + dFin.toLocaleDateString('fr-FR') + '</b>.</div>'
+      + '</div>';
+    return;
+  }
   if (isFreeperiod()) {
     var days = daysLeftFree();
     el.innerHTML = '<div class="free-banner">'
@@ -2984,12 +2992,29 @@ async function supprimerAnn(id) {
 }
 
 function updateDebloquerButtons() {
-  var btns = document.querySelectorAll('.btn-deb');
-  btns.forEach(function(btn) {
-    btn.innerHTML = '🎁 Débloquer le contact — GRATUIT pendant 1 semaine';
-    btn.style.background = 'var(--vert)';
-    btn.style.boxShadow = '0 4px 14px rgba(26,122,74,.4)';
-  });
+  var paint = function() {
+    var btns = document.querySelectorAll('.btn-deb');
+    var abonne = (typeof fpIsAbonne === 'function') && fpIsAbonne();
+    btns.forEach(function(btn) {
+      if (abonne) {
+        btn.innerHTML = '📞 Voir le contact';
+        btn.style.background = 'var(--vert)';
+        btn.style.boxShadow = '0 4px 14px rgba(26,122,74,.4)';
+      } else if (isFreeperiod()) {
+        btn.innerHTML = '🎁 Débloquer le contact — GRATUIT';
+        btn.style.background = 'var(--vert)';
+        btn.style.boxShadow = '0 4px 14px rgba(26,122,74,.4)';
+      } else {
+        btn.innerHTML = '🔓 Débloquer le contact';
+        btn.style.background = '';
+        btn.style.boxShadow = '';
+      }
+    });
+    renderFreeBanner();
+  };
+  if (currentUserData && fpSubUntil === null) {
+    checkAbonnement().then(paint).catch(function(){ paint(); });
+  } else { paint(); }
 }
 
 // ===== NAVIGATION =====
@@ -3390,6 +3415,7 @@ async function connecterUser() {
 
   isLoggedIn = true;
   currentUserData = user;
+  fpSubUntil = null; try { checkAbonnement(); } catch(e) {}
   saveCurrentUser(user);
   updateNavBtn();
   showToast('Connexion réussie. Bienvenue '+user.nom);
@@ -3454,6 +3480,29 @@ async function isUnlocked(annId) {
     return false;
   } catch(e) { return false; }
 }
+
+// ===== ESPACE ABONNÉ =====
+var fpSubUntil = null; // timestamp de fin d'abonnement (0 = pas abonné, null = pas encore vérifié)
+async function checkAbonnement(force) {
+  try {
+    if (!currentUserData || !currentUserData.tel) { fpSubUntil = null; return null; }
+    if (fpSubUntil !== null && !force) return fpSubUntil;
+    var sb = await getSb(); if (!sb) return null;
+    var { data } = await sb.from('paiements')
+      .select('montant,statut,created_at,valide_at')
+      .eq('user_tel', currentUserData.tel).eq('statut', 'valide');
+    var best = 0;
+    (data || []).forEach(function(p){
+      if ((p.montant || 0) >= 1000) {
+        var base = p.valide_at || p.created_at;
+        if (base) { var exp = new Date(base).getTime() + 365 * 86400000; if (exp > best) best = exp; }
+      }
+    });
+    fpSubUntil = best > Date.now() ? best : 0;
+    return fpSubUntil;
+  } catch(e) { return null; }
+}
+function fpIsAbonne(){ return !!(fpSubUntil && fpSubUntil > Date.now()); }
 
 // Révèle automatiquement les contacts déjà payés (au chargement des listes)
 async function revealPaidContacts() {
