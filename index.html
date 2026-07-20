@@ -4092,14 +4092,34 @@ async function triggerWaMatching(ann) {
     var query = sb.from('wa_alerts').select('*').eq('is_active', true);
     var { data: alerts, error } = await query;
     if (error || !alerts || !alerts.length) return;
+    // RÈGLE STRICTE : même grade + même discipline, vérifiés via les annonces de l'abonné
+    var tels = [];
+    alerts.forEach(function(al){ if (al.user_tel && tels.indexOf(al.user_tel) === -1) tels.push(al.user_tel); });
+    var annByTel = {};
+    if (tels.length) {
+      var { data: userAnns } = await sb.from('annonces').select('tel,grade,disc,reg,prov,regs_dest').in('tel', tels);
+      (userAnns || []).forEach(function(a){ (annByTel[a.tel] = annByTel[a.tel] || []).push(a); });
+    }
     var matches = alerts.filter(function(al){
-      // Logique : l'annonce matche l'alerte si chaque filtre actif est OK
+      // Jamais s'alerter soi-même
+      if (al.user_tel && ann.tel && al.user_tel === ann.tel) return false;
+      // Filtres explicites de l'abonné (inchangés)
       if (al.filter_corps && al.filter_corps !== corps) return false;
-      // Le abonné cherche un échange : sa "région actuelle" doit être dans les "régions souhaitées" de la nouvelle annonce
       if (al.filter_reg_actuelle && regsSouhaitees.indexOf(al.filter_reg_actuelle) === -1) return false;
-      // Et la "région souhaitée" du abonné doit être la "région actuelle" de la nouvelle annonce
       if (al.filter_reg_souhaitee && al.filter_reg_souhaitee !== regActuelle) return false;
-      return true;
+      // Si l'abonné a des annonces : même grade + même discipline + géo croisée + lieu différent
+      var mes = annByTel[al.user_tel];
+      if (mes && mes.length) {
+        return mes.some(function(m){
+          if ((m.grade || '') !== (ann.grade || '')) return false;
+          if ((m.disc || '') !== (ann.disc || '')) return false;
+          var dests = m.regs_dest || [];
+          var okDir = (regsSouhaitees.indexOf(m.reg) !== -1) || (dests.indexOf(regActuelle) !== -1);
+          var lieuDiff = (m.reg !== regActuelle) || ((m.prov || '') !== (ann.prov || ''));
+          return okDir && lieuDiff;
+        });
+      }
+      return true; // pas d'annonce : on s'en remet à ses filtres explicites
     });
     if (!matches.length) return;
     // Construire les messages + lien wa.me + insérer dans wa_queue
