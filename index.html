@@ -1419,6 +1419,7 @@ async function askPushPermission() {
     var snoozeUntil = parseInt(localStorage.getItem('fp_push_snooze_until') || '0', 10);
     if (Date.now() < snoozeUntil) return;
     if (document.getElementById('push-optin-banner')) return; // déjà visible
+    if (document.getElementById('wa-optin-banner')) return; // une seule bannière à la fois
     // Mini bannière d'opt-in (revient à chaque visite jusqu'à autorisation)
     var el = document.createElement('div');
     el.id = 'push-optin-banner';
@@ -1466,7 +1467,7 @@ function pushPermissionWatchdog() {
     askPushPermission();
   } catch(e) {}
 }
-setInterval(pushPermissionWatchdog, 90000);
+setInterval(pushPermissionWatchdog, 180000);
 
 async function markPushEnabled(v) {
   try {
@@ -1601,7 +1602,7 @@ async function sbGetUser(tel) {
   var sb = await getSb();
   if (!sb) { window._lastSbError = 'Connexion base de donnees impossible'; return null; }
   try {
-    var { data, error } = await sb.from('users').select('*').eq('tel', tel).maybeSingle();
+    var { data, error } = await sb.from('users').select('id,nom,tel,grade,created_at,last_seen,points,level,streak_days,referral_code,push_enabled,share_count').eq('tel', tel).maybeSingle();
     if (error) {
       console.error('sbGetUser error:', error);
       // N'ecrase pas une erreur critique deja positionnee par getSb
@@ -2952,28 +2953,10 @@ async function resetPassword() {
   var user = await sbGetUser(tel);
   if(!user) { showToast('❌ Numéro non trouvé.'); return; }
 
-  if(user.couleur !== couleur) {
-    forgotAttempts++;
-    var attEl = document.getElementById('forgot-attempts');
-    attEl.style.display = 'block';
-    if(forgotAttempts >= 3) {
-      forgotBlocked = true;
-      attEl.textContent = '⛔ 3 tentatives échouées. Bloqué pendant 5 minutes.';
-      forgotBlockTimer = setTimeout(function(){
-        forgotBlocked = false; forgotAttempts = 0;
-        attEl.textContent = '';
-        attEl.style.display = 'none';
-      }, 300000);
-    } else {
-      attEl.textContent = '❌ Réponse incorrecte. Tentative ' + forgotAttempts + '/3';
-    }
-    return;
-  }
-
   var nbEl = document.getElementById('new-pwd-block');
   if(nbEl.style.display === 'none') {
     nbEl.style.display = 'block';
-    showToast('✅ Couleur correcte ! Entrez votre nouveau code secret.');
+    showToast('Entrez maintenant votre nouveau code secret.');
     return;
   }
 
@@ -2988,7 +2971,20 @@ async function resetPassword() {
       showToast('✅ Code secret mis à jour ! Reconnectez-vous.');
       showLogin();
     } else {
-      showToast('❌ Erreur lors de la mise à jour. Réessayez.');
+      forgotAttempts++;
+      var attEl = document.getElementById('forgot-attempts');
+      attEl.style.display = 'block';
+      if(forgotAttempts >= 3) {
+        forgotBlocked = true;
+        attEl.textContent = '⛔ 3 tentatives échouées. Bloqué pendant 5 minutes.';
+        forgotBlockTimer = setTimeout(function(){
+          forgotBlocked = false; forgotAttempts = 0;
+          attEl.textContent = '';
+          attEl.style.display = 'none';
+        }, 300000);
+      } else {
+        attEl.textContent = '❌ Couleur incorrecte. Tentative ' + forgotAttempts + '/3';
+      }
     }
   } catch(e) {
     showToast('❌ Erreur de connexion');
@@ -3228,10 +3224,15 @@ async function connecterUser() {
 
   showToast('⏳ Connexion en cours...');
   window._lastSbError = null;
-  var user = await withTimeout(sbGetUser(tel), 10000, 'login');
-  if (user && user.__timeout) { showToast('❌ Réseau trop lent. Réessayez.'); return; }
-  if(!user)          { showToast('❌ Numéro non trouvé. Inscrivez-vous.'); return; }
-  if(user.pwd !== pwd) { showToast('❌ Code secret incorrect.'); return; }
+  var sb = await getSb();
+  if (!sb) { showToast('❌ Connexion impossible. Réessayez.'); return; }
+  var res = await withTimeout(sb.rpc('login_user', { p_tel: tel, p_pwd: pwd }), 10000, 'login');
+  if (res && res.__timeout) { showToast('❌ Réseau trop lent. Réessayez.'); return; }
+  var out = res ? res.data : null;
+  if (!out || out.status === 'not_found') { showToast('❌ Numéro non trouvé. Inscrivez-vous.'); return; }
+  if (out.status !== 'ok' || !out.user) { showToast('❌ Code secret incorrect.'); return; }
+  var user = out.user;
+  user.pwd = pwd; // conservé localement pour les actions qui exigent le code (suppression annonce, etc.)
 
   isLoggedIn = true;
   currentUserData = user;
@@ -3629,7 +3630,7 @@ function closePushNotif() {
 }
 // Déclencher les notifications toutes les 45-90 secondes
 function schedulePushNotifs() {
-  var delay = 20000 + Math.random() * 30000;
+  var delay = 60000 + Math.random() * 60000;
   setTimeout(function() {
     if (isLoggedIn) triggerPushNotif();
     schedulePushNotifs();
@@ -3757,6 +3758,7 @@ function askWaOptin() {
     var snoozeUntil = parseInt(localStorage.getItem('fp_wa_snooze_until') || '0', 10);
     if (Date.now() < snoozeUntil) return;
     if (document.getElementById('wa-optin-banner')) return;
+    if (document.getElementById('push-optin-banner')) return; // une seule bannière à la fois
     var el = document.createElement('div');
     el.id = 'wa-optin-banner';
     el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);max-width:420px;width:92%;z-index:990;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border-radius:14px;padding:14px;box-shadow:0 8px 24px rgba(37,211,102,.45);animation:fadeInUp .4s ease';
@@ -4205,7 +4207,7 @@ async function initApp() {
   // NOUVEAU : Demander permission push (après 8s d'activité, quand l'utilisateur est engagé)
   try { setTimeout(askPushPermission, 8000); } catch(e) {}
   // Popup WhatsApp opt-in IMMÉDIAT — montre tout de suite la promesse "où que tu sois on te poursuit"
-  try { setTimeout(askWaOptin, 1500); setInterval(waOptinWatchdog, 60000); } catch(e) {}
+  try { setTimeout(askWaOptin, 2500); setInterval(waOptinWatchdog, 180000); } catch(e) {}
 
   // ======= MOTEUR D'ADDICTION =======
   // Capture le ?ref=XXX dans l'URL pour stocker le code de parrainage en localStorage (utilisé à l'inscription)
