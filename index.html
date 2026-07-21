@@ -95,12 +95,18 @@
   --orange:#f57c00;--moov:#0099d4;
   --blanc:#fff;--gris:#f2f4f7;--gris2:#e0e4ea;
   --txt:#1a1a2e;--txt2:#4a5568;
+  --shadow-sm:0 2px 8px rgba(8,22,52,.06);
+  --shadow-md:0 8px 24px rgba(8,22,52,.10);
+  --shadow-lg:0 18px 50px rgba(8,22,52,.14);
+  --radius:14px;
+  --radius-sm:10px;
+  --radius-lg:20px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--gris);color:var(--txt);font-size:15px;max-width:480px;margin:0 auto;min-height:100vh}
+body{font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;background:var(--gris);color:var(--txt);font-size:15px;max-width:480px;margin:0 auto;min-height:100vh}
 
 /* NAV */
-nav{background:var(--bleu);display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:50px;position:sticky;top:0;z-index:200;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+nav{background:var(--bleu);display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:52px;position:sticky;top:0;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .logo{color:#fff;font-size:19px;font-weight:800;line-height:1;display:flex;align-items:center;gap:6px}
 .logo em{color:#4fc878;font-style:normal}
 .logo-flag{font-size:18px}
@@ -193,14 +199,14 @@ nav{background:var(--bleu);display:flex;align-items:center;justify-content:space
 .fcard{background:#fff;margin:10px 12px;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
 .fcard h3{font-size:13px;font-weight:700;color:var(--bleu);margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--vert3)}
 .fi{margin-bottom:11px}
-.fi label{display:block;font-size:11px;color:var(--txt2);margin-bottom:4px;font-weight:600}
-.fi input,.fi select,.fi textarea{width:100%;border:1.5px solid var(--gris2);border-radius:8px;padding:9px 11px;font-size:14px;color:var(--txt);outline:none;font-family:inherit;background:#fff}
-.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:var(--vert2)}
+.fi label{display:block;font-size:10.5px;color:var(--txt2);margin-bottom:6px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.fi input,.fi select,.fi textarea{width:100%;border:1px solid var(--gris2);border-radius:12px;padding:13px 15px;font-size:14.5px;color:var(--txt);outline:none;font-family:inherit;background:#fff;transition:border .2s,box-shadow .2s}
+.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:var(--bleu2);box-shadow:0 0 0 3px rgba(35,68,128,.12)}
 .fi textarea{resize:vertical;min-height:65px}
 .fi input.required-ok{border-color:var(--vert2)}
 .fi input.required-err,.fi select.required-err{border-color:#e53935}
 .info-box{background:var(--vert3);border-left:3px solid var(--vert2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--vert);margin-bottom:11px}
-.btn-submit{display:block;background:var(--vert2);color:#fff;border:none;padding:15px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin:8px 12px;width:calc(100% - 24px);box-shadow:0 4px 12px rgba(34,160,94,.3)}
+.btn-submit{display:block;background:linear-gradient(135deg,var(--bleu),var(--bleu2));color:#fff;border:none;padding:15px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;margin:8px 12px;width:calc(100% - 24px);box-shadow:0 8px 20px rgba(26,47,90,.35);letter-spacing:.01em;transition:.18s}
 .btn-submit:active{transform:scale(.98)}
 
 /* Checkboxes provinces destination */
@@ -241,7 +247,7 @@ nav{background:var(--bleu);display:flex;align-items:center;justify-content:space
 .ann-label{font-size:12px;color:var(--txt2);margin:8px 0 6px;font-weight:600}
 
 /* Carte annonce - nouveau format */
-.ann-card{background:#fff;border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:4px solid var(--vert2)}
+.ann-card{background:#fff;border:1px solid var(--gris2);border-radius:18px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow-sm);border-left:none}
 .ann-head{background:var(--vert3);padding:9px 12px;display:flex;align-items:center;justify-content:space-between}
 .ann-nom-wrap{display:flex;align-items:center;gap:7px}
 .ann-avatar{width:30px;height:30px;border-radius:50%;background:var(--vert2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
@@ -267,10 +273,10 @@ nav{background:var(--bleu);display:flex;align-items:center;justify-content:space
 #s-co{background:var(--gris);padding-bottom:70px}
 .co-hdr{background:var(--bleu);padding:14px 16px;color:#fff;text-align:center}
 .co-hdr h2{font-size:17px;font-weight:700}
-.co-card{background:#fff;margin:12px 12px 0;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.co-card{background:#fff;border:1px solid var(--gris2);margin:12px 12px 0;border-radius:18px;padding:18px;box-shadow:var(--shadow-sm)}
 .co-card h3{font-size:15px;font-weight:700;color:var(--bleu);text-align:center;margin-bottom:14px}
 .tabs{display:flex;background:var(--gris);border-radius:8px;padding:3px;margin-bottom:14px}
-.tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;border-radius:6px;color:var(--txt2);border:none;background:none}
+.tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;border-radius:10px;color:var(--txt2);border:none;background:none;letter-spacing:.02em;transition:.2s}
 .tab.active{background:#fff;color:var(--bleu);box-shadow:0 1px 4px rgba(0,0,0,.1)}
 
 /* MODALES */
@@ -586,6 +592,9 @@ html{scroll-behavior:smooth}
     "inLanguage":"fr"
   }
   </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -652,7 +661,8 @@ html{scroll-behavior:smooth}
 
   <!-- ===== COMMENT ÇA MARCHE ===== -->
   <div class="rvl" style="width:100%">
-    <div class="sec-t">🚀 Comment ça marche ?</div>
+    <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);font-weight:700;text-align:center;margin-top:24px">Fonctionnement</div>
+    <div class="sec-t">Comment ça marche</div>
     <div class="sec-s">Ta permutation en 3 étapes simples</div>
     <div class="hiw">
       <div class="hiw-c"><div class="hiw-n">1</div><div><div class="hiw-tt">Publie ton annonce — gratuit</div><div class="hiw-tx">Ton grade, ta discipline, ton poste actuel et tes destinations souhaitées. 2 minutes suffisent.</div></div></div>
@@ -670,7 +680,8 @@ html{scroll-behavior:smooth}
 
   <!-- ===== TARIF ===== -->
   <div class="rvl" style="width:100%">
-    <div class="sec-t">💳 Un tarif simple et transparent</div>
+    <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);font-weight:700;text-align:center;margin-top:24px">Tarification</div>
+    <div class="sec-t">Un tarif simple et transparent</div>
     <div class="sec-s">Pas d'abonnement mensuel. Pas de frais cachés.</div>
     <div class="price-box">
       <div class="price-m">1 000 F CFA <span class="price-y">/ an</span></div>
@@ -682,7 +693,8 @@ html{scroll-behavior:smooth}
 
   <!-- ===== FAQ ===== -->
   <div class="rvl" style="width:100%">
-    <div class="sec-t">❓ Questions fréquentes</div>
+    <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);font-weight:700;text-align:center;margin-top:24px">FAQ</div>
+    <div class="sec-t">Questions fréquentes</div>
     <div class="sec-s">Tout ce que tu dois savoir avant de te lancer</div>
     <div class="faq-i"><div class="faq-q" onclick="faqToggle(this)"><span>C'est quoi FasoPermut ?</span><span class="chv">▼</span></div><div class="faq-a">La plateforme burkinabè qui met en relation les enseignants et fonctionnaires cherchant une permutation de poste. Tu publies ton annonce, le moteur trouve les collègues compatibles, vous vous contactez et permutez.</div></div>
     <div class="faq-i"><div class="faq-q" onclick="faqToggle(this)"><span>Combien ça coûte ?</span><span class="chv">▼</span></div><div class="faq-a">L'inscription et la publication sont <b>gratuites</b>. L'accès aux contacts des collègues coûte <b>1 000 F CFA par an</b> — tous les contacts, pendant 12 mois, sans autre frais.</div></div>
@@ -762,7 +774,7 @@ html{scroll-behavior:smooth}
   <!-- ÉTAPE 2 : Profil enseignant -->
   <div class="form-step-section" id="fs-2">
   <div class="fcard">
-    <h3>📚 Profil enseignant</h3>
+    <h3>Profil enseignant</h3>
     <div class="fi"><label>Grade / Corps *</label>
       <select id="f-grade" onchange="autoFillDisc(this.value)">
         <option value="">— Choisir le grade —</option>
@@ -884,7 +896,7 @@ html{scroll-behavior:smooth}
 
   <!-- Mes annonces publiées -->
   <div class="mes-ann-sect">
-    <h3>📋 Mes annonces publiées</h3>
+    <h3>Mes annonces publiées</h3>
     <div class="ann-quota">⚠️ Maximum <b>3 annonces</b> par utilisateur — Pour garder le site propre et actif.</div>
     <div id="mes-annonces-list"><div class="skel skel-card"></div><div class="skel skel-card"></div><div class="skel skel-line"></div>
       <div class="no-ann">Aucune annonce publiée pour l'instant.</div>
@@ -994,7 +1006,7 @@ html{scroll-behavior:smooth}
       </div>
       <div class="ann-body">
         <div class="ann-row phare"><span class="lbl">🎓 Discipline</span><span class="val">Français / Histoire-Géo</span></div>
-        <div class="ann-row phare"><span class="lbl">📍 Poste actuel</span><span class="val">Sahel | Province Soum | Djibo — Lycée Départ. de Djibo</span></div>
+        <div class="ann-row phare"><span class="lbl">Poste actuel</span><span class="val">Sahel | Province Soum | Djibo — Lycée Départ. de Djibo</span></div>
         <div class="ann-comment">💡 Poste isolé, piste latéritique, logement non fourni. Zone d'insécurité.</div>
         <div class="ann-dest">
           <span class="lbl">🎯 Destination désirée</span>
@@ -1023,7 +1035,7 @@ html{scroll-behavior:smooth}
       </div>
       <div class="ann-body">
         <div class="ann-row phare"><span class="lbl">🎓 Discipline</span><span class="val">Français / Histoire-Géo</span></div>
-        <div class="ann-row phare"><span class="lbl">📍 Poste actuel</span><span class="val">Est | Province Gnagna | Bogandé — CEG de Bogandé</span></div>
+        <div class="ann-row phare"><span class="lbl">Poste actuel</span><span class="val">Est | Province Gnagna | Bogandé — CEG de Bogandé</span></div>
         <div class="ann-comment">💡 Accès difficile en saison des pluies. Collège de 400 élèves.</div>
         <div class="ann-dest">
           <span class="lbl">🎯 Destination désirée</span>
@@ -1051,7 +1063,7 @@ html{scroll-behavior:smooth}
       </div>
       <div class="ann-body">
         <div class="ann-row phare"><span class="lbl">🎓 Discipline</span><span class="val">Mathématiques</span></div>
-        <div class="ann-row phare"><span class="lbl">📍 Poste actuel</span><span class="val">Nord | Province Yatenga | Ouahigouya — Lycée Mahamoudou Ouédraogo</span></div>
+        <div class="ann-row phare"><span class="lbl">Poste actuel</span><span class="val">Nord | Province Yatenga | Ouahigouya — Lycée Mahamoudou Ouédraogo</span></div>
         <div class="ann-comment">💡 Lycée de référence régionale. Bonne infrastructure. Ville principale.</div>
         <div class="ann-dest">
           <span class="lbl">🎯 Destination désirée</span>
@@ -1079,7 +1091,7 @@ html{scroll-behavior:smooth}
       </div>
       <div class="ann-body">
         <div class="ann-row phare"><span class="lbl">🎓 Discipline</span><span class="val">SVT</span></div>
-        <div class="ann-row phare"><span class="lbl">📍 Poste actuel</span><span class="val">Centre-Sud | Province Zoundwéogo | Zabré — Lycée Départ. de Zabré</span></div>
+        <div class="ann-row phare"><span class="lbl">Poste actuel</span><span class="val">Centre-Sud | Province Zoundwéogo | Zabré — Lycée Départ. de Zabré</span></div>
         <div class="ann-comment">💡 Zone semi-aride, accès correct, établissement fonctionnel.</div>
         <div class="ann-dest">
           <span class="lbl">🎯 Destination désirée</span>
@@ -1107,7 +1119,7 @@ html{scroll-behavior:smooth}
       </div>
       <div class="ann-body">
         <div class="ann-row phare"><span class="lbl">🎓 Discipline</span><span class="val">EPS</span></div>
-        <div class="ann-row phare"><span class="lbl">📍 Poste actuel</span><span class="val">Centre-Nord | Province Sanmatenga | Kaya — CEG Kaya A</span></div>
+        <div class="ann-row phare"><span class="lbl">Poste actuel</span><span class="val">Centre-Nord | Province Sanmatenga | Kaya — CEG Kaya A</span></div>
         <div class="ann-comment">💡 CEG bien équipé. Terrain de sport disponible. Kaya ville accessible.</div>
         <div class="ann-dest">
           <span class="lbl">🎯 Destination désirée</span>
@@ -1139,7 +1151,7 @@ html{scroll-behavior:smooth}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.17 13.947l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.612z"/></svg>
         Telegram
       </a>
-      <button class="btn-share ct" onclick="shareSite()">🔗 Copier le lien</button>
+      <button class="btn-share ct" onclick="shareSite()">Copier le lien</button>
     </div>
   </div>
 
@@ -1224,7 +1236,7 @@ html{scroll-behavior:smooth}
 
   <!-- MES ANNONCES (visible quand connecté) -->
   <div class="co-card" id="mes-ann-compte" style="display:none">
-    <h3 style="margin-bottom:10px">📋 Mes annonces publiées</h3>
+    <h3 style="margin-bottom:10px">Mes annonces publiées</h3>
     <div class="ann-quota">Maximum <b>3 annonces</b> par utilisateur.</div>
     <div id="mes-ann-compte-list"><div class="no-ann">Aucune annonce pour l'instant.</div></div>
   </div>
@@ -2967,7 +2979,7 @@ function addAnnToS3(a) {
     + '</div>'
     + '<div class="ann-body">'
     +   '<div class="ann-row phare"><span class="lbl">🎓 Discipline</span><span class="val">'+escH(a.disc)+'</span></div>'
-    +   '<div class="ann-row phare"><span class="lbl">📍 Poste actuel</span><span class="val">'+escH(a.reg)+' | '+escH(a.prov)+' | '+escH(a.etab)+'</span></div>'
+    +   '<div class="ann-row phare"><span class="lbl">Poste actuel</span><span class="val">'+escH(a.reg)+' | '+escH(a.prov)+' | '+escH(a.etab)+'</span></div>'
     +   '<div class="ann-dest"><span class="lbl">🎯 Destination désirée</span>'+escH(destStr)+'</div>'
     +   '<div class="ann-contacts">';
 
@@ -3141,7 +3153,7 @@ function showToast(msg, longer) {
   t.classList.add('show');
   var d = longer ? 6500 : 2800;
   // Toasts d'erreur plus longs pour que l'utilisateur puisse lire
-  if (!longer && typeof msg === 'string' && (msg.indexOf('❌') === 0 || msg.indexOf('⚠️') === 0)) d = 4500;
+  if (!longer && typeof msg === 'string' && (msg.indexOf('✕') === 0 || msg.indexOf('⚠️') === 0)) d = 4500;
   setTimeout(function(){ t.classList.remove('show'); }, d);
 }
 
@@ -3582,13 +3594,13 @@ async function renderSubCard() {
     box.innerHTML = '<div style="background:' + (soon ? '#fff8e1' : 'var(--vert3)') + ';border-radius:10px;padding:12px;border-left:3px solid ' + (soon ? 'var(--orange)' : 'var(--vert2)') + '">'
       + '<div style="font-size:14px;font-weight:800;color:' + (soon ? '#b26a00' : 'var(--vert)') + '">' + (soon ? '⏳ Ton abonnement expire bientôt' : '✅ Abonnement actif') + '</div>'
       + '<div style="margin-top:4px">Tous les contacts sont débloqués jusqu\'au <b>' + d.toLocaleDateString('fr-FR') + '</b> (' + jours + ' jours restants).</div>'
-      + (soon ? '<button onclick="openPayModal(null, null)" style="margin-top:10px;width:100%;background:var(--orange);color:#fff;border:none;border-radius:8px;padding:10px;font-weight:800;font-size:13px;cursor:pointer">🔁 Renouveler — 1 000 F / an</button>' : '')
+      + (soon ? '<button onclick="openPayModal(null, null)" style="margin-top:10px;width:100%;background:var(--orange);color:#fff;border:none;border-radius:8px;padding:10px;font-weight:800;font-size:13px;cursor:pointer">Renouveler — 1 000 F / an</button>' : '')
       + '</div>';
   } else {
     box.innerHTML = '<div style="background:#fff;border:1px dashed var(--gris2);border-radius:10px;padding:12px">'
       + '<div style="font-size:13px;font-weight:800;color:var(--txt)">Pas encore abonné</div>'
       + '<div style="margin-top:4px">Débloque <b>tous les contacts pendant 1 an</b> et organise ta permutation directement avec tes collègues.</div>'
-      + '<button onclick="openPayModal(null, null)" style="margin-top:10px;width:100%;background:var(--orange);color:#fff;border:none;border-radius:8px;padding:10px;font-weight:800;font-size:13px;cursor:pointer">⭐ S\'abonner — 1 000 F / an</button>'
+      + '<button onclick="openPayModal(null, null)" style="margin-top:10px;width:100%;background:var(--orange);color:#fff;border:none;border-radius:8px;padding:10px;font-weight:800;font-size:13px;cursor:pointer">S\'abonner — 1 000 F / an</button>'
       + '</div>';
   }
 }
@@ -3740,7 +3752,7 @@ async function enregistrerPaiement(phone, ref) {
   var ico = document.getElementById('pay-proc-ico');
   var msg = document.getElementById('pay-proc-msg');
   var sub = document.getElementById('pay-proc-sub');
-  ico.textContent = '⏳'; msg.textContent = 'Enregistrement...'; sub.textContent = 'Un instant';
+  ico.textContent = '...'; msg.textContent = 'Enregistrement...'; sub.textContent = 'Un instant';
   try {
     var sb = await getSb();
     if (!sb) throw new Error('supabase indisponible');
@@ -3755,12 +3767,12 @@ async function enregistrerPaiement(phone, ref) {
       statut: 'en_attente'
     });
     if (res && res.error) throw res.error;
-    ico.textContent = '📨';
+    ico.textContent = '→';
     msg.textContent = 'Demande envoyée !';
     sub.textContent = 'Ton paiement est en cours de vérification. Ton abonnement (1 an, tous les contacts) sera activé dès validation.';
     setTimeout(function(){ cl('o-pay'); showToast('✅ Demande reçue — validation en cours'); }, 2800);
   } catch(e) {
-    ico.textContent = '❌';
+    ico.textContent = '✕';
     msg.textContent = 'Erreur d\'enregistrement';
     sub.textContent = 'Vérifie ta connexion et réessaie.';
     setTimeout(function(){ payGoStep(2); }, 2500);
@@ -3786,7 +3798,7 @@ function payError(errorMsg) {
   var ico = document.getElementById('pay-proc-ico');
   var msg = document.getElementById('pay-proc-msg');
   var sub = document.getElementById('pay-proc-sub');
-  ico.textContent = '❌';
+  ico.textContent = '✕';
   msg.textContent = 'Paiement échoué';
   sub.textContent = errorMsg || 'Veuillez réessayer.';
   setTimeout(function() { payGoStep(1); }, 2500);
@@ -5362,7 +5374,7 @@ async function renderGamiCard_DISABLED() {
       + '<div style="font-size:10px;color:#0d47a1;margin-top:8px">💡 Partage ton code avec tes collègues. Pour chaque inscrit avec ton code, tu gagnes <b>+30 points</b>.</div>'
       + '<div style="display:flex;gap:5px;margin-top:8px">'
         + '<button onclick="shareReferralWA(\''+escH(refUrl)+'\')" style="flex:1;background:#25d366;color:#fff;border:none;padding:9px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">📲 WhatsApp</button>'
-        + '<button onclick="shareReferralCopy(\''+escH(refUrl)+'\')" style="flex:1;background:#fff;color:var(--bleu);border:1.5px solid var(--bleu);padding:9px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">🔗 Copier le lien</button>'
+        + '<button onclick="shareReferralCopy(\''+escH(refUrl)+'\')" style="flex:1;background:#fff;color:var(--bleu);border:1.5px solid var(--bleu);padding:9px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">Copier le lien</button>'
       + '</div>'
     + '</div>';
   holder.innerHTML = html;
