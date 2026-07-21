@@ -609,7 +609,7 @@ html{scroll-behavior:smooth}
   <!-- Compteur en ligne live -->
   <div id="online-pill" style="display:inline-flex;align-items:center;gap:6px;background:rgba(34,160,94,.18);border:1px solid rgba(79,200,120,.45);color:#9ee9b6;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;margin:6px 0 4px">
     <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4fc878;box-shadow:0 0 0 0 rgba(79,200,120,.7);animation:fpOnlineDot 1.6s infinite"></span>
-    <span id="online-count">—</span> enseignants en ligne
+    <b style="font-size:13px;color:#fff">+1 400</b> inscrits · <span id="online-count">—</span> en ligne
   </div>
   <!-- Bannière retour personnalisée (renseignée dynamiquement) -->
   <div id="welcome-back-banner"></div>
@@ -891,9 +891,9 @@ html{scroll-behavior:smooth}
     </div>
   </div>
 
-  <footer>
-    <b>FasoPermut</b> · fasopermut.bf 🇧🇫
-    <div class="footer-copy">© 2026 FasoPermut. Tous droits réservés. | Plateforme de permutation des enseignants du Burkina Faso</div>
+  <footer style="padding:12px 0 4px;border-top:1px solid rgba(255,255,255,.1);margin-top:8px;text-align:center">
+    <div style="font-weight:800;font-size:12px;color:#b0c8e0">FasoPermut</div>
+    <div style="font-size:10px;color:#7fa0b8;margin-top:3px">© 2026 · Plateforme de permutation des enseignants du Burkina Faso</div>
   </footer>
 </div>
 
@@ -1143,9 +1143,9 @@ html{scroll-behavior:smooth}
     </div>
   </div>
 
-  <footer>
-    <b>FasoPermut</b> · fasopermut.bf 🇧🇫
-    <div class="footer-copy">© 2026 FasoPermut. Tous droits réservés. | Plateforme de permutation des enseignants du Burkina Faso</div>
+  <footer style="padding:12px 0 4px;border-top:1px solid rgba(255,255,255,.1);margin-top:8px;text-align:center">
+    <div style="font-weight:800;font-size:12px;color:#b0c8e0">FasoPermut</div>
+    <div style="font-size:10px;color:#7fa0b8;margin-top:3px">© 2026 · Plateforme de permutation des enseignants du Burkina Faso</div>
   </footer>
 </div>
 
@@ -3095,6 +3095,10 @@ function go(id) {
     var coCard = document.querySelector('#s-co .co-card');
     if (coCard) coCard.style.display = isLoggedIn ? 'none' : 'block';
     renderMesAnnoncesCompte();
+    var coInfo = document.getElementById('co-user-info');
+    if (coInfo && isLoggedIn && currentUserData) {
+      coInfo.textContent = (currentUserData.nom || '') + ' \u00b7 ' + (currentUserData.tel || '') + (currentUserData.grade ? ' \u00b7 ' + currentUserData.grade : '');
+    }
     try { renderShareChallenge(); } catch(e){}
   }
   if (id === 's2' && isLoggedIn && currentUserData) {
@@ -5795,7 +5799,7 @@ async function adminRenderPaiements() {
   box.innerHTML = '<div style="text-align:center;color:#888;font-size:12px;padding:14px">⏳ Chargement...</div>';
   try {
     var sb = await getSb(); if (!sb) { box.innerHTML = ''; return; }
-    var { data } = await sb.from('paiements').select('*').order('created_at', { ascending: false }).limit(100);
+    var { data } = await sb.from('paiements').select('*').order('created_at', { ascending: false }).limit(50);
     if (!data || !data.length) { box.innerHTML = '<div style="text-align:center;color:#888;font-size:12px;padding:14px">Aucun paiement pour le moment.</div>'; return; }
     var enAttente = data.filter(function(p){ return p.statut === 'en_attente'; });
     var autres = data.filter(function(p){ return p.statut !== 'en_attente'; });
