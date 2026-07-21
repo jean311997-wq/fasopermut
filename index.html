@@ -231,7 +231,7 @@ nav{background:var(--bleu);display:flex;align-items:center;justify-content:space
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* ECRAN 3 - ANNONCES */
-#s3{background:var(--gris);padding-bottom:70px}
+#s3{background:linear-gradient(180deg,#f8fafb 0%,#eef1f6 100%);padding-bottom:70px}
 .ahdr{background:var(--bleu);padding:14px 16px;color:#fff}
 .ahdr h2{font-size:17px;font-weight:700}
 .ahdr p{font-size:11px;color:#8ab0cc;margin-top:2px}
@@ -270,7 +270,7 @@ nav{background:var(--bleu);display:flex;align-items:center;justify-content:space
 .match-badge{background:linear-gradient(90deg,#f57c00,#ff9800);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px}
 
 /* ECRAN CONNEXION */
-#s-co{background:var(--gris);padding-bottom:70px}
+#s-co{background:linear-gradient(180deg,#f8fafb 0%,#eef1f6 100%);padding-bottom:70px}
 .co-hdr{background:var(--bleu);padding:14px 16px;color:#fff;text-align:center}
 .co-hdr h2{font-size:17px;font-weight:700}
 .co-card{background:#fff;border:1px solid var(--gris2);margin:12px 12px 0;border-radius:18px;padding:18px;box-shadow:var(--shadow-sm)}
@@ -419,7 +419,13 @@ nav{background:var(--bleu);display:flex;align-items:center;justify-content:space
 .modal-login-info{background:var(--vert3);border-radius:8px;padding:10px;font-size:12px;color:var(--vert);margin-bottom:14px;text-align:center}
 
 /* BOTTOM NAV */
-.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid var(--gris2);z-index:150;display:flex}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--blanc);border-top:1px solid #e4e8f0;z-index:150;display:flex;align-items:center;justify-content:space-around;height:68px;padding-bottom:8px;backdrop-filter:blur(12px)}
+.bni{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;font-family:'Inter',system-ui,sans-serif;font-size:10px;font-weight:600;color:#8a94a6;flex:1;padding:6px 0;transition:.16s}
+.bni svg{transition:.16s;stroke:#8a94a6}
+.bni.active{color:var(--vert2)}
+.bni.active svg{stroke:var(--vert2)}
+.bni span{display:block}
+.bni-ico{display:none}
 .bni{flex:1;display:flex;flex-direction:column;align-items:center;padding:7px 4px 5px;cursor:pointer;color:var(--txt2);font-size:10px;gap:2px;border:none;background:none}
 .bni.active{color:var(--vert2)}
 .bni-notif{position:relative}
@@ -588,7 +594,8 @@ button{font-family:'Inter',system-ui,sans-serif}
   linear-gradient(160deg,#0d2b1e 0%,#122e45 45%,#1a2f5a 100%);
   padding:44px 22px 50px;min-height:auto;justify-content:flex-start}
 #s1.on{display:flex}
-.hero-img{width:72px;border-radius:16px;opacity:.9;margin-bottom:6px}
+.hero-img{width:80px;border-radius:18px;margin-bottom:10px;animation:heartbeat 2.4s ease-in-out infinite;display:block}
+@keyframes heartbeat{0%,100%{transform:scale(1)}14%{transform:scale(1.06)}28%{transform:scale(1)}42%{transform:scale(1.04)}56%{transform:scale(1)}}
 .badge{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);color:rgba(160,212,176,.85);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;padding:7px 16px;border-radius:24px;margin-bottom:16px;margin-top:16px}
 .hero-t{font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:1.02}
 .hero-t em{color:#4fc878}
@@ -723,14 +730,14 @@ button:active,a.wa-sup:active{transform:scale(.96);opacity:.9}
   <!-- Compteur en ligne live -->
   <div id="online-pill" style="display:inline-flex;align-items:center;gap:6px;background:rgba(34,160,94,.18);border:1px solid rgba(79,200,120,.45);color:#9ee9b6;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;margin:6px 0 4px">
     <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4fc878;box-shadow:0 0 0 0 rgba(79,200,120,.7);animation:fpOnlineDot 1.6s infinite"></span>
-    <b style="font-size:13px;color:#fff">+1 400</b> inscrits · <span id="online-count">—</span> en ligne
+    <span id="online-count" style="font-size:13px;font-weight:700;color:#fff">—</span> <span style="color:#fff">en ligne</span>
   </div>
   <!-- Bannière retour personnalisée (renseignée dynamiquement) -->
   <div id="welcome-back-banner"></div>
   <div class="stats">
-    <div class="sbox"><div class="n" id="stat-users">—</div><div class="l">Enseignants inscrits</div></div>
-    <div class="sbox"><div class="n" id="stat-annonces">—</div><div class="l">Annonces actives</div></div>
-    <div class="sbox"><div class="n" id="stat-regions">—</div><div class="l">Régions couvertes</div></div>
+    <div class="sbox"><div class="n" id="stat-users">+2 000</div><div class="l">Enseignants inscrits</div></div>
+    <div class="sbox"><div class="n" id="stat-annonces">+1 400</div><div class="l">Annonces actives</div></div>
+    <div class="sbox"><div class="n" id="stat-regions">13</div><div class="l">Régions couvertes</div></div>
   </div>
   <button class="btn-p" onclick="checkLoginBeforePublish()">Créer mon annonce</button>
   <button class="btn-s" onclick="go('s3')">Voir les annonces</button>
@@ -1346,26 +1353,24 @@ button:active,a.wa-sup:active{transform:scale(.96);opacity:.9}
     <div id="mes-ann-compte-list"><div class="no-ann">Aucune annonce pour l'instant.</div></div>
   </div>
 
-  <!-- Contactez-nous -->
-  <div class="co-card">
-    <div style="background:var(--vert3);border:2px solid var(--vert2);border-radius:10px;padding:14px;text-align:center;margin-bottom:12px">
-      <div style="font-size:12px;color:var(--txt2);margin-bottom:6px;font-weight:700">Contactez-nous</div>
-      <a href="https://t.me/Admifasopermut" target="_blank" style="font-size:16px;font-weight:800;color:var(--vert);text-decoration:none">📲 t.me/Admifasopermut</a>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <a href="https://whatsapp.com/channel/0029VbCIoQPElagpxG9ZIn0H" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#25d366;color:#fff;text-align:center;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 4px 12px rgba(37,211,102,.35)">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        Chaîne WhatsApp officielle
-      </a>
-      <a href="https://www.facebook.com/share/18MkcYr54Y/" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#1877f2;color:#fff;text-align:center;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 4px 12px rgba(24,119,242,.35)">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
-        Page Facebook FasoPermut
-      </a>
-      <a href="https://t.me/FasoPermut" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#229ed9;color:#fff;text-align:center;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 4px 12px rgba(34,158,217,.35)">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.17 13.947l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.612z"/></svg>
-        Canal Telegram officiel
-      </a>
-    </div>
+  <!-- Réseaux & Contact — style Liberia One -->
+  <div class="co-card" style="padding:0;overflow:hidden">
+    <div style="padding:16px 18px 10px;font-size:13px;font-weight:700;color:var(--txt)">Nous suivre</div>
+    <a href="https://whatsapp.com/channel/0029VbCIoQPElagpxG9ZIn0H" target="_blank" style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-top:1px solid #f2f4f7;text-decoration:none;color:var(--txt)">
+      <div style="width:38px;height:38px;border-radius:12px;background:rgba(37,211,102,.1);display:grid;place-items:center;flex:0 0 auto"><svg width="18" height="18" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg></div>
+      <div style="flex:1"><div style="font-size:13.5px;font-weight:600">WhatsApp</div><div style="font-size:11px;color:#8a94a6">Chaîne officielle</div></div>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c0c6d0" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+    <a href="https://www.facebook.com/share/18MkcYr54Y/" target="_blank" style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-top:1px solid #f2f4f7;text-decoration:none;color:var(--txt)">
+      <div style="width:38px;height:38px;border-radius:12px;background:rgba(24,119,242,.1);display:grid;place-items:center;flex:0 0 auto"><svg width="18" height="18" viewBox="0 0 24 24" fill="#1877f2"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></div>
+      <div style="flex:1"><div style="font-size:13.5px;font-weight:600">Facebook</div><div style="font-size:11px;color:#8a94a6">Page officielle</div></div>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c0c6d0" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+    <a href="https://t.me/FasoPermut" target="_blank" style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-top:1px solid #f2f4f7;text-decoration:none;color:var(--txt)">
+      <div style="width:38px;height:38px;border-radius:12px;background:rgba(0,136,204,.1);display:grid;place-items:center;flex:0 0 auto"><svg width="18" height="18" viewBox="0 0 24 24" fill="#0088cc"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.17 13.947l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.612z"/></svg></div>
+      <div style="flex:1"><div style="font-size:13.5px;font-weight:600">Telegram</div><div style="font-size:11px;color:#8a94a6">Canal officiel</div></div>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c0c6d0" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
   </div>
 
   <footer>
@@ -1695,10 +1700,10 @@ button:active,a.wa-sup:active{transform:scale(.96);opacity:.9}
 
 <!-- BOTTOM NAV -->
 <div class="bnav">
-  <button class="bni active" onclick="go('s1');nav(this)"><span class="bni-ico">🏠</span>Accueil</button>
-  <button class="bni bni-notif" id="btn-nav-ann" onclick="go('s3');nav(this);clearNotifBadge()"><span class="bni-ico">📋</span>Annonces<span class="notif-badge" id="notif-badge" style="display:none">0</span></button>
-  <button class="bni" onclick="go('s2');nav(this)"><span class="bni-ico">➕</span>Publier</button>
-  <button class="bni" onclick="go('s-co');nav(this)"><span class="bni-ico">👤</span>Mon Compte</button>
+  <button class="bni active" onclick="go('s1');nav(this)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l9-8 9 8M5 10v9a1 1 0 001 1h3m10-10v9a1 1 0 01-1 1h-3m-4 0v-5h4v5"/></svg><span>Accueil</span></button>
+  <button class="bni bni-notif" id="btn-nav-ann" onclick="go('s3');nav(this);clearNotifBadge()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Annonces</span><span class="notif-badge" id="notif-badge" style="display:none">0</span></button>
+  <button class="bni" onclick="go('s2');nav(this)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg><span>Publier</span></button>
+  <button class="bni" onclick="go('s-co');nav(this)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Mon Compte</span></button>
 </div>
 
 <script>
