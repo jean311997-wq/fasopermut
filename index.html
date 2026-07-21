@@ -534,7 +534,58 @@ footer b{color:#4fc878}
 .legal-txt{font-size:12px;color:#444;line-height:1.6;text-align:left;max-height:55vh;overflow-y:auto;padding-right:4px}
 .legal-txt h4{font-size:13px;margin:10px 0 4px;color:#222}
 
+
+/* ===== Squelettes de chargement ===== */
+.skel{background:linear-gradient(90deg,#e8edf1 25%,#f4f6f8 50%,#e8edf1 75%);background-size:200% 100%;animation:shimmer 1.4s ease infinite;border-radius:8px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-card{height:90px;margin:8px 12px;border-radius:12px}
+.skel-line{height:12px;margin:6px 12px;border-radius:6px;width:70%}
+.skel-line.short{width:45%}
+.skel-circle{width:36px;height:36px;border-radius:50%;margin:6px}
+
+/* ===== Transitions entre écrans ===== */
+.scr{opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .3s ease;pointer-events:none}
+.scr.on{opacity:1;transform:none;pointer-events:auto}
+
+/* ===== Boutons avec spinner ===== */
+.btn-submit,.btn-om,.btn-mm{position:relative;transition:opacity .2s}
+.btn-submit.loading,.btn-om.loading,.btn-mm.loading{opacity:.7;pointer-events:none}
+.btn-submit.loading::after,.btn-om.loading::after,.btn-mm.loading::after{content:'';position:absolute;right:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
+
+/* ===== Retour tactile ===== */
+button,a.wa-sup,.tab,.btn-deb{-webkit-tap-highlight-color:transparent;transition:transform .12s ease,opacity .12s}
+button:active,a.wa-sup:active,.tab:active,.btn-deb:active{transform:scale(.96);opacity:.85}
+
+/* ===== Scroll fluide ===== */
+html{scroll-behavior:smooth}
+
 </style>
+
+  <link rel="canonical" href="https://fasopermut.com/">
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebApplication",
+    "name":"FasoPermut",
+    "url":"https://fasopermut.com",
+    "description":"Plateforme de permutation de postes entre enseignants du Burkina Faso. Trouve ton binôme compatible (même grade, même discipline) et organise ta permutation.",
+    "applicationCategory":"EducationalApplication",
+    "operatingSystem":"Web",
+    "offers":{
+      "@type":"Offer",
+      "price":"1000",
+      "priceCurrency":"XOF",
+      "description":"Abonnement annuel — accès à tous les contacts pendant 12 mois"
+    },
+    "author":{
+      "@type":"Organization",
+      "name":"FasoPermut",
+      "url":"https://fasopermut.com"
+    },
+    "inLanguage":"fr"
+  }
+  </script>
 </head>
 <body>
 
@@ -835,7 +886,7 @@ footer b{color:#4fc878}
   <div class="mes-ann-sect">
     <h3>📋 Mes annonces publiées</h3>
     <div class="ann-quota">⚠️ Maximum <b>3 annonces</b> par utilisateur — Pour garder le site propre et actif.</div>
-    <div id="mes-annonces-list">
+    <div id="mes-annonces-list"><div class="skel skel-card"></div><div class="skel skel-card"></div><div class="skel skel-line"></div>
       <div class="no-ann">Aucune annonce publiée pour l'instant.</div>
     </div>
   </div>
@@ -1342,7 +1393,7 @@ footer b{color:#4fc878}
         <b>Paiements à valider.</b> Vérifie sur ton téléphone (Orange/Moov) que l'argent est bien arrivé avec le bon ID, puis clique <b>Valider</b> — le contact se débloque pour l'utilisateur.
         <button onclick="adminRenderPaiements()" style="border:none;background:none;color:var(--orange);font-weight:700;cursor:pointer;text-decoration:underline;font-size:11px;margin-left:4px">Actualiser</button>
       </div>
-      <div id="adm-pay-list"></div>
+      <div id="adm-pay-list"><div class="skel skel-card"></div><div class="skel skel-line short"></div></div>
     </div>
 
     <!-- Pane WHATSAPP QUEUE -->
@@ -3411,11 +3462,13 @@ async function connecterUser() {
   if (!tel || !pwd) { showToast('⚠️ Remplissez téléphone et code secret'); return; }
 
   showToast('⏳ Connexion en cours...');
+  var _loginBtn = document.querySelector('#tc .btn-submit'); if (_loginBtn) _loginBtn.classList.add('loading');
   window._lastSbError = null;
   var sb = await getSb();
   if (!sb) { showToast('❌ Connexion impossible. Réessayez.'); return; }
   var res = await withTimeout(sb.rpc('login_user', { p_tel: tel, p_pwd: pwd }), 10000, 'login');
   if (res && res.__timeout) { showToast('❌ Réseau trop lent. Réessayez.'); return; }
+  var _loginBtn2 = document.querySelector('#tc .btn-submit'); if (_loginBtn2) _loginBtn2.classList.remove('loading');
   var out = res ? res.data : null;
   if (!out || out.status === 'not_found') { showToast('❌ Numéro non trouvé. Inscrivez-vous.'); return; }
   if (out.status !== 'ok' || !out.user) { showToast('❌ Code secret incorrect.'); return; }
@@ -3663,6 +3716,7 @@ function payBack() {
 }
 
 function payConfirm() {
+  var _payBtn = document.getElementById('pay-confirm-btn'); if (_payBtn) _payBtn.classList.add('loading');
   var phone = (document.getElementById('pay-phone').value || '').trim();
   var refEl = document.getElementById('pay-ref');
   var ref   = (refEl ? refEl.value : '').trim();
@@ -5794,6 +5848,7 @@ function paymentRow(p, actionable) {
 }
 
 async function adminValiderPaiement(id) {
+  var _vBtn = event && event.target; if (_vBtn) _vBtn.classList.add('loading');
   try {
     var sb = await getSb(); if (!sb) return;
     var { data, error } = await sb.rpc('valider_paiement', { p_id: id, p_code: PAY_ADMIN_CODE });
@@ -6218,6 +6273,30 @@ try {
     setTimeout(function(){ fpOpen('o-onboard'); obGo(1); }, 1200);
   }
 } catch(e){}
+
+/* ===== Lazy-loading des sections hors écran ===== */
+try {
+  var _lazyObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting) {
+        var fn = e.target.getAttribute('data-lazy');
+        if (fn && typeof window[fn] === 'function') { try { window[fn](); } catch(ex){} }
+        _lazyObs.unobserve(e.target);
+      }
+    });
+  }, { rootMargin: '200px' });
+  document.querySelectorAll('[data-lazy]').forEach(function(el){ _lazyObs.observe(el); });
+} catch(e){}
+
+/* ===== Préchargement intelligent : charger les annonces en arrière-plan ===== */
+try {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(function(){
+      try { if (typeof loadAnnonces === 'function') loadAnnonces(); } catch(e){}
+    }, { timeout: 3000 });
+  }
+} catch(e){}
+
 </script>
 
 <!-- Modal WhatsApp opt-in : recevoir alertes WhatsApp -->
