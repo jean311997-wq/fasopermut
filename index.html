@@ -1778,6 +1778,7 @@ button:active,.btn-p:active,.btn-s:active,.btn-deb:active,.btn-submit:active,a.w
  <button class="adm-tab-btn" onclick="adminTabSwitch('wa',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">WA</button>
  <button class="adm-tab-btn" onclick="adminTabSwitch('pay',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">Paiements</button>
  <button class="adm-tab-btn" onclick="adminTabSwitch('inv',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">Investisseurs</button>
+ <button class="adm-tab-btn" onclick="adminTabSwitch('err',event)" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;border-radius:6px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer">Erreurs</button>
  </div>
 
  <!-- Pane VUE D'ENSEMBLE -->
@@ -1849,6 +1850,15 @@ button:active,.btn-p:active,.btn-s:active,.btn-deb:active,.btn-submit:active,a.w
  </div>
 
  <!-- Pane INVESTISSEURS -->
+ <!-- Pane ERREURS -->
+ <div class="adm-pane" id="adm-pane-err" style="display:none">
+   <div style="background:#fff4f4;border-left:3px solid #c00;padding:10px;border-radius:8px;margin-bottom:12px;font-size:11px;color:#7a1f1f">
+     <b>Erreurs rencontrées par les utilisateurs.</b> Chaque plantage sur leur téléphone est enregistré ici. Regarde cette page une fois par semaine : une erreur fréquente = des abonnés perdus.
+     <button onclick="adminRenderErreurs()" style="border:none;background:none;color:#c00;font-weight:700;cursor:pointer;text-decoration:underline;font-size:11px;margin-left:4px">Actualiser</button>
+   </div>
+   <div id="adm-err-list"></div>
+ </div>
+
  <div class="adm-pane" id="adm-pane-inv" style="display:none">
    <div style="background:#eef7ff;border-left:3px solid var(--bleu2);padding:10px;border-radius:8px;margin-bottom:12px;font-size:11px;color:var(--bleu)">
      <b>Espaces investisseurs.</b> Chaque investisseur reçoit un lien unique et un code personnel. Il voit les chiffres agrégés (jamais les noms ni les numéros). Tu peux révoquer l'accès à tout moment.
@@ -4022,6 +4032,11 @@ async function connecterUser() {
   var _loginBtn2 = document.querySelector('#tc .btn-submit'); if (_loginBtn2) _loginBtn2.classList.remove('loading');
   var out = res ? res.data : null;
   if (!out || out.status === 'not_found') { showToast('Numéro non trouvé. Inscrivez-vous.'); return; }
+  if (out.status === 'bloque') {
+    var mn = Math.ceil((out.secondes || 900) / 60);
+    showToast('Trop de tentatives. Réessaie dans ' + mn + ' minute' + (mn > 1 ? 's' : '') + '.');
+    return;
+  }
   if (out.status !== 'ok' || !out.user) { showToast('Code secret incorrect.'); return; }
   var user = out.user;
   user.pwd = pwd; // conservé localement pour les actions qui exigent le code (suppression annonce, etc.)
@@ -6337,6 +6352,7 @@ function adminTabSwitch(tab, ev) {
   // Charge auto les paiements à valider
   if (tab === 'pay') { try { adminRenderPaiements(); } catch(e){} }
   if (tab === 'inv') { try { adminRenderInvestisseurs(); } catch(e){} }
+  if (tab === 'err') { try { adminRenderErreurs(); } catch(e){} }
 }
 
 // ===== ADMIN : PAIEMENTS À VALIDER =====
@@ -7425,6 +7441,93 @@ try {
     });
   })();
 } catch(e) {}
+
+
+/* ================================================================
+   SUIVI DES ERREURS — capture automatique des plantages utilisateurs
+   ================================================================ */
+var _errSent = {};   // évite d'envoyer 100 fois la même erreur
+var _errCount = 0;   // plafond par session
+
+async function fpLogError(message, source, ligne, pile) {
+  try {
+    if (_errCount >= 10) return;                 // 10 max par session
+    var cle = (message || '') + '|' + (ligne || 0);
+    if (_errSent[cle]) return;                   // une seule fois par erreur unique
+    _errSent[cle] = true;
+    _errCount++;
+
+    var sb = await getSb();
+    if (!sb) return;
+    await sb.rpc('log_error', {
+      p_message: String(message || '').slice(0, 500),
+      p_source: String(source || '').slice(0, 300),
+      p_ligne: parseInt(ligne, 10) || 0,
+      p_pile: String(pile || '').slice(0, 2000),
+      p_page: (location.hash || location.pathname || '').slice(0, 300),
+      p_navigateur: (navigator.userAgent || '').slice(0, 300),
+      p_user_tel: (currentUserData && currentUserData.tel) ? currentUserData.tel : null
+    });
+  } catch(e) { /* ne jamais casser le site à cause du logger */ }
+}
+
+try {
+  window.addEventListener('error', function(e){
+    try {
+      fpLogError(e.message, e.filename, e.lineno, e.error && e.error.stack ? e.error.stack : '');
+    } catch(x) {}
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    try {
+      var r = e.reason;
+      fpLogError('Promesse rejetee: ' + (r && r.message ? r.message : String(r)),
+                 'promise', 0, r && r.stack ? r.stack : '');
+    } catch(x) {}
+  });
+} catch(e) {}
+
+/* ---------- ADMIN : consultation des erreurs ---------- */
+async function adminRenderErreurs() {
+  var box = document.getElementById('adm-err-list');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;color:#8a94a6;font-size:12px;padding:12px">Chargement...</div>';
+  try {
+    var sb = await getSb(); if (!sb || !ADM_PWD_CACHE) return;
+    var { data, error } = await sb.rpc('admin_lister_erreurs', { p_admin_pwd: ADM_PWD_CACHE });
+    if (error || !data || !data.ok) { box.innerHTML = '<div style="color:#c00;font-size:12px;padding:10px">Erreur de chargement.</div>'; return; }
+
+    var html = '<div style="display:flex;gap:8px;margin-bottom:12px">'
+      + '<div style="flex:1;background:' + (data.total_24h > 0 ? '#fde8e8' : 'var(--vert3)') + ';border-radius:10px;padding:10px;text-align:center">'
+      +   '<div style="font-size:18px;font-weight:800;color:' + (data.total_24h > 0 ? '#c00' : 'var(--vert)') + '">' + (data.total_24h || 0) + '</div>'
+      +   '<div style="font-size:10px;color:var(--txt2)">Dernieres 24h</div></div>'
+      + '<div style="flex:1;background:#f4f6f8;border-radius:10px;padding:10px;text-align:center">'
+      +   '<div style="font-size:18px;font-weight:800;color:var(--txt)">' + (data.total_7j || 0) + '</div>'
+      +   '<div style="font-size:10px;color:var(--txt2)">7 derniers jours</div></div>'
+      + '</div>';
+
+    var g = data.groupes || [];
+    if (!g.length) {
+      html += '<div style="text-align:center;padding:20px;color:var(--vert);font-size:12.5px;font-weight:600">Aucune erreur enregistree. Tout va bien.</div>';
+    } else {
+      html += '<div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:6px">ERREURS LES PLUS FREQUENTES</div>';
+      g.forEach(function(e){
+        var quand = e.derniere_fois ? new Date(e.derniere_fois).toLocaleString('fr-FR') : '';
+        var grave = (e.occurrences || 0) >= 5;
+        html += '<div style="background:#fff;border:1px solid var(--gris2);border-left:3px solid ' + (grave ? '#c00' : 'var(--orange)') + ';border-radius:10px;padding:11px;margin-bottom:8px">'
+          + '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">'
+          +   '<div style="font-size:12px;font-weight:700;color:#222;flex:1;word-break:break-word">' + escH(e.message || 'Erreur inconnue') + '</div>'
+          +   '<div style="font-size:11px;font-weight:800;color:' + (grave ? '#c00' : 'var(--orange)') + ';white-space:nowrap">x' + (e.occurrences || 1) + '</div>'
+          + '</div>'
+          + '<div style="font-size:10.5px;color:var(--txt2);margin-top:4px">Derniere fois : ' + escH(quand) + '</div>'
+          + (e.page_exemple ? '<div style="font-size:10.5px;color:var(--txt2)">Page : ' + escH(e.page_exemple) + '</div>' : '')
+          + '</div>';
+      });
+    }
+    box.innerHTML = html;
+  } catch(e) {
+    box.innerHTML = '<div style="color:#c00;font-size:12px;padding:10px">Erreur.</div>';
+  }
+}
 
 </script>
 
